@@ -77,19 +77,7 @@ jobs:
       # build fails, put its errors and last lines in one, so anyone can see why.
       - name: Show why the build failed
         if: failure()
-        run: |
-          sed -e 's/\x1b\[[0-9;]*m//g' build.log > plain.log
-          # where it stopped: buildozer's "Command failed" line, else the end of the log
-          stop=$(grep -n -m1 -E "Command failed|Buildozer failed" plain.log | cut -d: -f1)
-          stop=${stop:-$(wc -l < plain.log)}
-          {
-            echo "--- error lines ---"
-            grep -nE "Error|error:|Exception|Traceback|FAILED|No such file|not found" plain.log | tail -n 30
-            echo "--- before it stopped (line $stop) ---"
-            sed -n "$((stop > 70 ? stop - 70 : 1)),$((stop + 2))p" plain.log
-          } | cut -c1-220 > why.txt || true
-          msg=$(sed -e 's/%/%25/g' why.txt | awk '{printf "%s%%0A", $0}')
-          echo "::error title=Android build failed::${msg}"
+        run: python .github/workflows/why_failed.py build.log
 
       - uses: actions/upload-artifact@v4
         with:

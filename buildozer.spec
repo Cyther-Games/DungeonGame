@@ -26,7 +26,8 @@ fullscreen = 1
 
 android.api = 35
 android.minapi = 24
-android.archs = arm64-v8a, armeabi-v7a
+# 64-bit phones (every phone from about 2019 on); add armeabi-v7a for old 32-bit ones
+android.archs = arm64-v8a
 android.allow_backup = True
 # The Android SDK's licence has to be accepted for the build to download the SDK.
 android.accept_sdk_license = True
