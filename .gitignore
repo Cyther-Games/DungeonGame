@@ -47,3 +47,7 @@ icons/*.ico
 images/_sheet_*.png
 images/_original_stock/
 vfx/_sheet_*.png
+
+# Android build output and buildozer's working folder
+.buildozer/
+bin/

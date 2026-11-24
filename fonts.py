@@ -16,6 +16,10 @@ _REF = "The quick brown fox jumps over the lazy dog 0123456789"
 _GEORGIA_W = {(False, False): 25.39, (True, False): 29.30, (False, True): 25.75, (True, True): 29.72}
 _FALLBACKS = ["gelasio", "notoserif", "liberationserif", "tinos", "dejavuserif", "freeserif",
               "nimbusroman", "palatinolinotype", "timesnewroman", "times"]
+# Android has no font lookup pygame can use, but every phone ships Noto Serif here.
+_ANDROID_DIR = "/system/fonts"
+_ANDROID_FILES = {(False, False): "NotoSerif-Regular.ttf", (True, False): "NotoSerif-Bold.ttf",
+                  (False, True): "NotoSerif-Italic.ttf", (True, True): "NotoSerif-BoldItalic.ttf"}
 _cache = {}
 _face = {}
 
@@ -39,12 +43,24 @@ def _pick():
                 if p and name[:5] in os.path.basename(p).lower().replace(" ", "").replace("-", ""):
                     _face["pick"] = name
                     break
+            if _face["pick"] is None and os.path.exists(
+                    os.path.join(_ANDROID_DIR, _ANDROID_FILES[(False, False)])):
+                _face["pick"] = "android:notoserif"
         print(f"Fonts: using {_face['pick'] or 'the built-in font'}"
               + ("" if _face["pick"] == "georgia" else " (Georgia isn't installed; sized to match it)"))
     return _face["pick"]
 
 
 def _make(name, size, bold, italic):
+    if name == "android:notoserif":
+        path = os.path.join(_ANDROID_DIR, _ANDROID_FILES[(bool(bold), bool(italic))])
+        styled = os.path.exists(path)
+        f = pygame.font.Font(path if styled else
+                             os.path.join(_ANDROID_DIR, _ANDROID_FILES[(False, False)]), size)
+        if not styled:                       # that style isn't installed: fake it
+            f.set_bold(bold)
+            f.set_italic(italic)
+        return f
     if name is None:
         f = pygame.font.Font(None, size)
         f.set_bold(bold)

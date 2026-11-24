@@ -199,9 +199,10 @@ def _line(a, p0, p1, col, width=1):
 
 
 def _from(s):
-    rgb = np.transpose(pygame.surfarray.pixels3d(s), (1, 0, 2)).copy()
-    al = np.transpose(pygame.surfarray.pixels_alpha(s), (1, 0)).copy()
-    return np.dstack([rgb, al])
+    """The surface's pixels as an (h, w, 4) array. Via bytes rather than surfarray so it
+    works with any pygame / numpy pair (Android's pygame is 2.1.0)."""
+    tobytes = getattr(pygame.image, "tobytes", None) or pygame.image.tostring
+    return np.frombuffer(tobytes(s, "RGBA"), np.uint8).reshape(s.get_height(), s.get_width(), 4).copy()
 
 
 def _b(ellipses, pal, seed=1, noise=0.05):

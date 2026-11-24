@@ -1886,11 +1886,19 @@ admin_suggestion_index = 0
 # to the window or the whole screen. It has to be SCALED from the very first window, since
 # SDL can't add scaling to a window made without it.
 import main_menu
+import touch                          # on-screen controls for Android / touchscreens
+touch_controls = touch.TouchControls()
 main_menu.prepare_display()           # smooth scaling, real pixels on Windows; before init
 pygame.init()
 screen = main_menu.open_window((SCREEN_WIDTH, SCREEN_HEIGHT))
 is_fullscreen = main_menu.settings["fullscreen"]
 clock = pygame.time.Clock(); dt = 0
+# pygame 2.1.3 renamed image.tostring/fromstring to tobytes/frombytes; Android's pygame
+# is 2.1.0, so use whichever this pygame has.
+_img_tobytes = getattr(pygame.image, "tobytes", None) or pygame.image.tostring
+_img_frombytes = getattr(pygame.image, "frombytes", None) or pygame.image.fromstring
+
+
 def _load_serif(size, bold=False):
     """The Grimoire serif face: Georgia, or on systems without it (most Linux) the closest
     installed serif, sized to measure the same (see fonts.py)."""
@@ -5104,7 +5112,7 @@ def save_game():
     for aid, lay in _minimap.items():
         if aid in stage_areas and "fog" in lay:
             f = lay["fog"]
-            fog[aid] = {"size": f.get_size(), "data": zlib.compress(pygame.image.tobytes(f, "RGBA"), 6),
+            fog[aid] = {"size": f.get_size(), "data": zlib.compress(_img_tobytes(f, "RGBA"), 6),
                         "visited": set(lay.get("visited", ()))}
     tx, ty = player_tile()
     data = {
@@ -5203,7 +5211,7 @@ def load_game():
     for aid, f in data.get("fog", {}).items():
         if aid in stage_areas:
             lay = _minimap_layers(stage_areas[aid])
-            lay["fog"] = pygame.image.frombytes(zlib.decompress(f["data"]), tuple(f["size"]), "RGBA")
+            lay["fog"] = _img_frombytes(zlib.decompress(f["data"]), tuple(f["size"]), "RGBA")
             lay["visited"] = set(f.get("visited", ()))
     # the day
     _day_offset[0] = 0
@@ -5552,7 +5560,7 @@ def draw_full_map():
 
 def update_player_movement():
     global player_x, player_y
-    keys = pygame.key.get_pressed()
+    keys = touch_controls.keys(pygame.key.get_pressed())   # the touch stick counts as keys
     held = _pm["held"]
     for d, (k1, k2) in _DIR_KEYS.items():          # most recently pressed direction wins
         down = keys[k1] or keys[k2]
@@ -5650,6 +5658,21 @@ def _main_menu():
     return result
 
 
+# What the touch controls show on each screen: the stick and Use button while exploring
+# (Use also moves dialogue on), and the corner button to pause or close. Everything else
+# is tapped directly - the game's buttons all take clicks.
+_TOUCH_CORNER = {STATE_EXPLORE: "pause", STATE_COMBAT: "pause", STATE_MAP: "close",
+                 STATE_QUESTS: "close", STATE_MENU: "close", STATE_PAUSE: "close"}
+
+
+def _touch_layout():
+    busy = transition_active() or ascension_active()
+    touch_controls.layout((SCREEN_WIDTH, SCREEN_HEIGHT),
+                          stick=not busy and game_state == STATE_EXPLORE,
+                          use=not busy and game_state in (STATE_EXPLORE, STATE_DIALOGUE),
+                          corner=None if busy else _TOUCH_CORNER.get(game_state))
+
+
 def toggle_fullscreen():
     """F11 / Alt+Enter in game: switch fullscreen at the current resolution."""
     global screen, is_fullscreen
@@ -5742,6 +5765,8 @@ def _set_cursor(hand):
 def draw_click_hover(surface):
     """Hover feedback for whatever clickable is under the cursor: a hand cursor, a soft
     gold frame for plain regions, and an optional tooltip."""
+    if touch_controls.seen_touch:
+        return                    # on a touchscreen there's no cursor to hover with
     region = click_region_at(pygame.mouse.get_pos())
     _set_cursor(region is not None)
     if not region:
@@ -11048,7 +11073,8 @@ try:
     while running:
         skill_used_last_turn = player_selected_skill # Store for effectiveness check
 
-        _events = pygame.event.get()
+        _touch_layout()
+        _events = touch_controls.process(pygame.event.get())
         for event in _events:   # a list, so clicks can append the KEYDOWN they stand for
             if event.type == pygame.QUIT: running = False
             # F11 / Alt+Enter switch fullscreen in every state, even mid-transition, and
@@ -11394,6 +11420,7 @@ try:
         if _overlay_busy:
             begin_click_frame()      # cinematics swallow input, so nothing is hoverable
         draw_click_hover(screen)
+        touch_controls.draw(screen)
 
         # Reset player selected skill tracker *after* processing logic and rendering
         # Store the skill used just before the event loop clears things for the next frame.

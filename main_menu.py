@@ -67,6 +67,12 @@ settings = {
 RESOLUTIONS  = ["800x600", "1280x720", "1920x1080"]
 QUALITY_OPTS = ["Low", "Medium", "High"]
 
+# On Android the game is always fullscreen, and a wide picture suits a phone better.
+from touch import ON_ANDROID
+if ON_ANDROID:
+    settings["resolution"] = "1280x720"
+    settings["fullscreen"] = True
+
 
 def parse_resolution(res_str):
     """'1280x720' -> (1280, 720)"""
@@ -206,6 +212,8 @@ def _shown_size(size, fullscreen):
 def _sharp_factor(size, shown):
     """How many times bigger to hand the picture over for sharp scaling (see open_window).
     1 when it isn't being enlarged."""
+    if ON_ANDROID:
+        return 1      # a phone's graphics chip scales fine, and the extra work drains battery
     f = min(shown[0] / size[0], shown[1] / size[1])
     if f <= 1.05:
         return 1
@@ -289,6 +297,8 @@ def open_window(size=None, fullscreen=None):
     size = tuple(size or (SCREEN_WIDTH, SCREEN_HEIGHT))
     if fullscreen is None:
         fullscreen = settings["fullscreen"]
+    if ON_ANDROID:
+        fullscreen = True
     shown = _shown_size(size, fullscreen)
     disp, k, fullscreen, scaled = _set_mode(size, _sharp_factor(size, shown), fullscreen)
     if scaled and not fullscreen and not _fit_window(shown) and k > 1:
@@ -460,9 +470,11 @@ class Slider:
     def update(self, events, mouse_pos):
         for e in events:
             if e.type == pygame.MOUSEBUTTONDOWN and e.button == 1:
-                hx = self._handle_x()
-                if pygame.Rect(hx - 8, self.rect.centery - 8, 16, 16).collidepoint(mouse_pos):
+                # anywhere on the bar, not just the small handle, so a finger can grab it
+                bar = pygame.Rect(self.rect.x - 10, self.rect.centery - 16, self.rect.width + 20, 32)
+                if bar.collidepoint(e.pos):
                     self.dragging = True
+                    mouse_pos = e.pos
             if e.type == pygame.MOUSEBUTTONUP and e.button == 1:
                 self.dragging = False
         if self.dragging:
@@ -706,7 +718,7 @@ def run_menu(screen, clock):
         for e in events:
             if e.type == pygame.QUIT:
                 return "exit"
-            if e.type == pygame.KEYDOWN and e.key == pygame.K_ESCAPE:
+            if e.type == pygame.KEYDOWN and e.key in (pygame.K_ESCAPE, getattr(pygame, "K_AC_BACK", -1)):
                 if current_screen in (SCREEN_PLAY, SCREEN_OPTIONS, SCREEN_CREDITS):
                     start_fade_to(SCREEN_MAIN)
                 elif current_screen in (SCREEN_VIDEO, SCREEN_AUDIO):

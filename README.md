@@ -27,6 +27,14 @@ once. After that it starts straight away. Delete `.venv` to make it set up again
 
 Press **F11** (or **Alt+Enter**) at any time to switch between fullscreen and a window.
 
+**Android:** the app is built by GitHub Actions: open the repository's **Actions** tab,
+choose **Android build**, then **Run workflow**. When it finishes (the first build takes
+about an hour), download **Dungeon-android** from the run's Artifacts, unzip it and install
+the `.apk` on your phone (Android asks you to allow installing apps from that source).
+On a phone there's a stick to walk (push it to the edge to run), a **Use** button to talk
+and interact, a pause button top right, and everything else is tapped. To try the touch
+controls on a PC, start the game with `python main.py --touch`.
+
 ## What it needs
 
 - **Python 3.9 or newer.** On Python 3.9–3.13 the game uses pygame; on 3.14 and newer

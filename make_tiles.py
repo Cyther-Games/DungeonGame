@@ -536,9 +536,10 @@ def crystal(small=False, seed=6):
         pygame.draw.polygon(s, light, [(cx - half, bot), (cx - half, top + 3), (cx, top), (cx, bot)])
         pygame.draw.line(s, hi, (cx - half + 1, top + 4), (cx - half + 1, bot - 2))
         pygame.draw.polygon(s, dark, [(cx + half, top + 3), (cx + half, bot), (cx + 0.5, bot), (cx + 0.5, top + 1)])
-    a = np.transpose(pygame.surfarray.pixels3d(s), (1, 0, 2)).copy()
-    al = np.transpose(pygame.surfarray.pixels_alpha(s), (1, 0)).copy()
-    out = np.dstack([a, al])
+    # the surface's pixels as an (h, w, 4) array; via bytes rather than surfarray so it
+    # works with any pygame / numpy pair (Android's pygame is 2.1.0)
+    _tobytes = getattr(pygame.image, "tobytes", None) or pygame.image.tostring
+    out = np.frombuffer(_tobytes(s, "RGBA"), np.uint8).reshape(s.get_height(), s.get_width(), 4).copy()
     outline(out, (40, 20, 80))
     return out
 
