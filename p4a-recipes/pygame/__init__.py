@@ -14,6 +14,7 @@ import os
 import re
 
 import pythonforandroid
+from pythonforandroid.recipe import Recipe
 from pythonforandroid.util import current_directory
 
 # python-for-android loads this file under the stock recipe's module name, so the stock
@@ -32,8 +33,14 @@ class PygameWithSimdRecipe(_stock.Pygame2Recipe):
     # time, so the build's own Python needs Cython - the 3.0 series 2.6.1 was released with
     hostpython_prerequisites = ["setuptools", "Cython>=3.0.10,<3.1"]
 
-    def prebuild_arch(self, arch):
+    def build_compiled_components(self, arch):
+        # install Cython just before compiling; the build's Python is only set up by now
+        if getattr(self, "_host_recipe", None) is None:
+            self._host_recipe = Recipe.get_recipe("hostpython3", self.ctx)
         self.install_hostpython_prerequisites()
+        super().build_compiled_components(arch)
+
+    def prebuild_arch(self, arch):
         super().prebuild_arch(arch)
         with current_directory(self.get_build_dir(arch.arch)):
             with open("Setup") as f:
