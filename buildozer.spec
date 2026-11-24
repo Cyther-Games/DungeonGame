@@ -14,8 +14,11 @@ source.include_exts = py,png,json
 source.exclude_dirs = .github, .buildozer, bin, saves, .venv, __pycache__, p4a-recipes, tiles, Beta, Prompts, images/_original_stock
 source.exclude_patterns = make_element_icons.py, make_pixel_art.py, make_true_icons.py, make_vfx.py, make_vow_cards.py, DND.py, code.py, icons/_sheet_*, images/_sheet_*, vfx/_sheet_*
 
-# python-for-android's own pygame recipe is patched in p4a-recipes/pygame (see there)
-requirements = python3, pygame, numpy
+# python-for-android's pygame recipe is pygame 2.1.0, which no longer compiles (its
+# pre-generated C needs Python 3.10 or older); p4a-recipes/pygame builds pygame 2.6.1
+# instead. That supports Python up to 3.13, and numpy needs 3.11+, so: Python 3.11.
+# (hostpython3 must be the same version as python3.)
+requirements = python3==3.11.5, hostpython3==3.11.5, pygame==2.6.1, numpy
 
 icon.filename = %(source.dir)s/icons/Portal.png
 orientation = landscape

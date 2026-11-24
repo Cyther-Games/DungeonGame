@@ -1,10 +1,13 @@
-"""python-for-android's pygame recipe, with one fix.
+"""python-for-android's pygame recipe, with two fixes.
 
-The stock recipe builds pygame's `surface` module without its SIMD blitter files, so the
-app crashes on launch with "cannot locate symbol alphablit_alpha_sse2_argb_surf_alpha"
-(python-for-android issue #3405). This runs the stock recipe unchanged, then adds those
-files to the build configuration it wrote. On ARM they compile to the plain fallbacks;
-they just have to be there so the symbols exist.
+1. pygame 2.6.1 instead of the stock 2.1.0, whose pre-generated C code no longer compiles
+   with current Python ("longintrepr.h file not found"). 2.6.1's Android build template
+   has the same placeholders, so the stock recipe's build steps still fit.
+2. The stock recipe builds pygame's `surface` module without its SIMD blitter files, so
+   the app crashes on launch with "cannot locate symbol alphablit_alpha_sse2_argb_surf_alpha"
+   (python-for-android issue #3405). This runs the stock recipe unchanged, then adds those
+   files to the build configuration it wrote. On ARM they compile to the plain fallbacks;
+   they just have to be there so the symbols exist.
 """
 import importlib.util
 import os
@@ -24,6 +27,8 @@ _SIMD = "src_c/simd_blitters_sse2.c src_c/simd_blitters_avx2.c"
 
 
 class PygameWithSimdRecipe(_stock.Pygame2Recipe):
+    version = "2.6.1"
+
     def prebuild_arch(self, arch):
         super().prebuild_arch(arch)
         with current_directory(self.get_build_dir(arch.arch)):

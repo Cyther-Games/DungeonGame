@@ -37,19 +37,41 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install buildozer==1.6.0 cython setuptools
 
-      - name: Reuse the Android SDK / NDK and earlier builds
-        uses: actions/cache@v4
+      # Two caches, saved even when a build fails so the next try is quicker:
+      # the Android SDK / NDK download, and the compiled libraries - the latter only reused
+      # while buildozer.spec and the recipes are unchanged, so a settings change starts clean.
+      - name: Restore the Android SDK / NDK
+        uses: actions/cache/restore@v4
         with:
-          path: |
-            ~/.buildozer
-            .buildozer
-          key: buildozer-${{ runner.os }}-${{ hashFiles('buildozer.spec', 'p4a-recipes/**') }}
-          restore-keys: buildozer-${{ runner.os }}-
+          path: ~/.buildozer
+          key: sdk-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: sdk-${{ runner.os }}-
+
+      - name: Restore earlier build work
+        uses: actions/cache/restore@v4
+        with:
+          path: .buildozer
+          key: work-${{ runner.os }}-${{ hashFiles('buildozer.spec', 'p4a-recipes/**') }}-${{ github.run_id }}
+          restore-keys: work-${{ runner.os }}-${{ hashFiles('buildozer.spec', 'p4a-recipes/**') }}-
 
       - name: Build the APK
         run: |
           { yes | buildozer -v android debug; } 2>&1 | tee build.log
           exit ${PIPESTATUS[0]}
+
+      - name: Save the Android SDK / NDK
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.buildozer
+          key: sdk-${{ runner.os }}-${{ github.run_id }}
+
+      - name: Save the build work
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: .buildozer
+          key: work-${{ runner.os }}-${{ hashFiles('buildozer.spec', 'p4a-recipes/**') }}-${{ github.run_id }}
 
       # Build logs need a GitHub sign-in to read, but a run's annotations don't: when the
       # build fails, put its errors and last lines in one, so anyone can see why.
