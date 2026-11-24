@@ -5725,15 +5725,31 @@ _apply_video_settings_for_gameplay()
 
 
 # --- Helper Functions ---
+# Text pictures are kept and reused: the HUD draws the same few dozen labels every frame,
+# and making each one afresh (the font library shapes and paints every letter) is slow on
+# a phone. Never change a picture this returns (set_alpha etc.) - blit it only.
+_text_cache = {}
+
+
+def render_text(font_obj, text, color):
+    key = (id(font_obj), text, tuple(color))
+    img = _text_cache.get(key)
+    if img is None:
+        if len(_text_cache) > 1500:
+            _text_cache.clear()
+        img = _text_cache[key] = font_obj.render(text, True, color)
+    return img
+
+
 def draw_text(text, font_obj, color, surface, x, y, center=False):
     try:
         adj_x = x if not center else x - font_obj.size(text)[0] // 2; adj_y = y if not center else y - font_obj.size(text)[1] // 2
         check_x = max(0, min(adj_x, SCREEN_WIDTH - 1)); check_y = max(0, min(adj_y, SCREEN_HEIGHT - 1))
         bg_color = surface.get_at((check_x, check_y))
-        if color == BLACK and (bg_color == BLACK or bg_color == DARK_GRAY): textobj = font_obj.render(text, True, WHITE)
-        elif color == DARKEST_GRAY and (bg_color == BLACK or bg_color == DARK_GRAY): textobj = font_obj.render(text, True, LIGHT_GRAY)
-        else: textobj = font_obj.render(text, True, color)
-    except IndexError: textobj = font_obj.render(text, True, color)
+        if color == BLACK and (bg_color == BLACK or bg_color == DARK_GRAY): textobj = render_text(font_obj, text, WHITE)
+        elif color == DARKEST_GRAY and (bg_color == BLACK or bg_color == DARK_GRAY): textobj = render_text(font_obj, text, LIGHT_GRAY)
+        else: textobj = render_text(font_obj, text, color)
+    except IndexError: textobj = render_text(font_obj, text, color)
     textrect = textobj.get_rect()
     if center: textrect.center = (x, y)
     else: textrect.topleft = (x, y)
@@ -5877,7 +5893,7 @@ def draw_heading(text, font_obj, color, surface, x, y, spacing=4, center=True, u
     """Grimoire chapter/panel title: uppercase serif with manual letter-spacing (tracking)
     and a soft ink shadow so it reads as carved gold-leaf."""
     if upper: text = text.upper()
-    glyphs = [(ch, font_obj.render(ch, True, color)) for ch in text]
+    glyphs = [(ch, render_text(font_obj, ch, color)) for ch in text]
     total = sum(g.get_width() for _, g in glyphs) + spacing * max(0, len(glyphs) - 1)
     h = font_obj.get_height()
     start_x = x - total // 2 if center else x
@@ -5885,7 +5901,7 @@ def draw_heading(text, font_obj, color, surface, x, y, spacing=4, center=True, u
     if shadow:
         cx = start_x
         for ch, g in glyphs:
-            sh = font_obj.render(ch, True, (0, 0, 0))
+            sh = render_text(font_obj, ch, (0, 0, 0))
             surface.blit(sh, (cx + 2, top_y + 2))
             cx += g.get_width() + spacing
     cx = start_x
@@ -6240,9 +6256,9 @@ def draw_magic_bar(surface, x, y, width, height, ratio, fill_top, fill_bottom, g
         lf = label_font
         if lf.size(label)[0] > width - 8 and lf is not xp_font:
             lf = xp_font
-        shadow = lf.render(label, True, (0, 0, 0))
+        shadow = render_text(lf, label, (0, 0, 0))
         surface.blit(shadow, shadow.get_rect(center=(rect.centerx + 1, rect.centery + 1)))
-        text = lf.render(label, True, label_color)
+        text = render_text(lf, label, label_color)
         surface.blit(text, text.get_rect(center=rect.center))
 
 def show_notice(title, message, sub="", color=None, ms=CHEST_TOAST_MS):
@@ -7060,16 +7076,16 @@ def _update_world_ambience(area, cam_x, cam_y, vw, vh, now, light_list, tx0, ty0
 
     chimneys = []
     if area.outdoor:
-        tall = _area_layers(area)["tall"]
-        for y in range(ty0, min(area.h - 1, ty1 + 4) + 1):
-            for x in range(max(0, tx0 - 5), min(area.w - 1, tx1 + 1) + 1):
-                obj = objects.get((x, y))
-                if obj and obj.startswith("house_") and (x, y) in tall:
-                    _img, ox, oy, _sy = tall[(x, y)]
-                    if obj == "house_desert":
-                        chimneys.append((ox + 66, oy + 7, False))       # the flat roof's vent
-                    else:
-                        chimneys.append((ox + 62.5, oy + 1, obj == "house_volcanic"))
+        # (from the per-chunk lists of tall objects: checking every tile in view each frame
+        # was some 800 look-ups)
+        for (x, y), (_img, ox, oy, _sy) in _chunk_items(_area_layers(area)["tall_k"], max(0, tx0 - 5), ty0,
+                                                        min(area.w - 1, tx1 + 1), min(area.h - 1, ty1 + 4)):
+            obj = objects.get((x, y))
+            if obj and obj.startswith("house_"):
+                if obj == "house_desert":
+                    chimneys.append((ox + 66, oy + 7, False))       # the flat roof's vent
+                else:
+                    chimneys.append((ox + 62.5, oy + 1, obj == "house_volcanic"))
     sources = []
     for (lx, ly, _c, _r) in light_list:
         src = _AMB_SOURCES.get(objects.get((int(lx), int(ly))))
@@ -11208,16 +11224,33 @@ def _draw_timings():
     if not SHOW_TIMINGS or game_state not in (STATE_EXPLORE, STATE_COMBAT):
         return
     t = _timing
-    line = (f"{_fps_meter['fps']:.0f} fps  |  logic {t['logic']:.0f}  world {t['world']:.0f}  "
+    mode = "GPU" if main_menu.gpu_layers_on() else "CPU"
+    line = (f"{_fps_meter['fps']:.0f} fps {mode}  |  logic {t['logic']:.0f}  world {t['world']:.0f}  "
             f"ui {max(0.0, t['draw'] - t['world']):.0f}  show {t['show']:.0f}  frame {t['frame']:.0f} ms  |  "
             f"PNG {'yes' if _PNG_OK else 'no'}  icons {len(element_icons)}/{len(ELEMENT_ICONS_MAP)}"
             + (f"  [{_image_errors[0][:60]}]" if _image_errors else ""))
-    img = small_font.render(line, True, (255, 240, 200))
-    bg = pygame.Surface((img.get_width() + 12, img.get_height() + 4), pygame.SRCALPHA)
+    err = main_menu.gpu_error()
+    lines = [line, "tap here to switch GPU / CPU drawing"] + ([f"GPU error: {err[:90]}"] if err else [])
+    imgs = [render_text(small_font, l, (255, 240, 200)) for l in lines]
+    w = max(i.get_width() for i in imgs) + 12
+    h = sum(i.get_height() for i in imgs) + 4
+    bg = pygame.Surface((w, h), pygame.SRCALPHA)
     bg.fill((0, 0, 0, 150))
-    x = SCREEN_WIDTH // 2 - bg.get_width() // 2
-    screen.blit(bg, (x, SCREEN_HEIGHT - bg.get_height()))
-    screen.blit(img, (x + 6, SCREEN_HEIGHT - bg.get_height() + 2))
+    x, y = SCREEN_WIDTH // 2 - w // 2, SCREEN_HEIGHT - h
+    screen.blit(bg, (x, y))
+    for i in imgs:
+        screen.blit(i, (x + 6, y + 2)); y += i.get_height()
+    add_click(pygame.Rect(SCREEN_WIDTH // 2 - w // 2, SCREEN_HEIGHT - h, w, h), _toggle_drawing, hover=None)
+
+
+def _toggle_drawing():
+    """Tapping the timing line: switch between two-layer (GPU) and usual (CPU) drawing."""
+    global screen
+    main_menu.set_gpu_layers(not main_menu.gpu_layers_on())
+    screen = main_menu.open_window((SCREEN_WIDTH, SCREEN_HEIGHT))
+    for k in _timing:
+        _timing[k] = 0.0
+    _fps_meter["fps"] = 0.0
 
 
 def _measure_fps(frame_dt):
@@ -11598,6 +11631,8 @@ try:
 
         _t_show = time.perf_counter()
         main_menu.present()
+        if main_menu.current_surface() is not screen:      # the window was re-opened
+            screen = main_menu.current_surface()
         if SHOW_TIMINGS:
             _timing_add("show", time.perf_counter() - _t_show)
             _timing_add("frame", time.perf_counter() - _t_frame)

@@ -6,8 +6,7 @@
 2. The stock recipe builds pygame's `surface` module without its SIMD blitter files, so
    the app crashes on launch with "cannot locate symbol alphablit_alpha_sse2_argb_surf_alpha"
    (python-for-android issue #3405). This runs the stock recipe unchanged, then adds those
-   files to the build configuration it wrote. On ARM they compile to the plain fallbacks;
-   they just have to be there so the symbols exist.
+   files to the build configuration it wrote. (On 64-bit ARM they hold the NEON versions.)
 """
 import importlib.util
 import os
@@ -32,6 +31,13 @@ class PygameWithSimdRecipe(_stock.Pygame2Recipe):
     # pygame's source (unlike 2.1.0's) leaves its Cython modules to be generated at build
     # time, so the build's own Python needs Cython - the 3.0 series 2.6.1 was released with
     hostpython_prerequisites = ["setuptools", "Cython>=3.0.10,<3.1"]
+
+    def get_recipe_env(self, arch):
+        # pygame does its own pixel work (blending, scaling): make sure it's compiled
+        # optimised whatever flags the build's Python hands down
+        env = super().get_recipe_env(arch)
+        env["CFLAGS"] = (env.get("CFLAGS", "") + " -O3 -DNDEBUG").strip()
+        return env
 
     def build_compiled_components(self, arch):
         # install Cython just before compiling; the build's Python is only set up by now

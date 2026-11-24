@@ -350,11 +350,25 @@ def open_window(size=None, fullscreen=None):
 # hands over the world with world_layer() rather than enlarging it itself.
 # ---------------------------------------------------------------------------
 _gpu = {"on": False, "ren": None, "ui_tex": None, "world_tex": None, "world_size": None,
-        "layer": None, "last": None}
+        "layer": None, "last": None, "pref": None, "error": "", "failed": False}
 
 
 def gpu_layers_wanted():
+    if _gpu["failed"]:
+        return False                          # it broke once this run: stay on the usual way
+    if _gpu["pref"] is not None:
+        return _gpu["pref"]                   # chosen by tapping the timing line
     return ON_ANDROID or os.environ.get("DUNGEON_GPU_LAYERS") == "1"
+
+
+def set_gpu_layers(on):
+    """Choose two-layer drawing or the usual way (re-open the window afterwards)."""
+    _gpu["pref"] = bool(on)
+    _gpu["failed"] = False
+
+
+def gpu_error():
+    return _gpu["error"]
 
 
 def _start_gpu_layers(size):
@@ -368,7 +382,7 @@ def _start_gpu_layers(size):
         return canvas
     except Exception as e:
         print(f"Two-layer drawing unavailable ({e}); drawing the usual way")
-        _gpu["on"] = False
+        _gpu.update(on=False, error=f"{type(e).__name__}: {e}", failed=True)
         return None
 
 
@@ -439,7 +453,10 @@ def present():
             return
         except Exception as e:
             print(f"Two-layer drawing failed ({e}); drawing the usual way from now on")
-            _gpu["on"] = False
+            _gpu.update(on=False, error=f"{type(e).__name__}: {e}", failed=True)
+            # back to a plain window, so the game draws straight on the display again
+            # (move.py picks the new surface up after present())
+            open_window(_view["size"])
     disp = pygame.display.get_surface()
     canvas = _view["canvas"]
     if _view["k"] == 1 and canvas is not None and disp is not None and canvas is not disp:
