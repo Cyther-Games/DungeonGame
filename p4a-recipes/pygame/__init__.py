@@ -28,8 +28,12 @@ _SIMD = "src_c/simd_blitters_sse2.c src_c/simd_blitters_avx2.c"
 
 class PygameWithSimdRecipe(_stock.Pygame2Recipe):
     version = "2.6.1"
+    # pygame's source (unlike 2.1.0's) leaves its Cython modules to be generated at build
+    # time, so the build's own Python needs Cython - the 3.0 series 2.6.1 was released with
+    hostpython_prerequisites = ["setuptools", "Cython>=3.0.10,<3.1"]
 
     def prebuild_arch(self, arch):
+        self.install_hostpython_prerequisites()
         super().prebuild_arch(arch)
         with current_directory(self.get_build_dir(arch.arch)):
             with open("Setup") as f:
