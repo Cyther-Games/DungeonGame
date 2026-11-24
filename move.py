@@ -11433,7 +11433,10 @@ except Exception as e:
     print(f"CRASH DETECTED: {e}")
     import traceback
     traceback.print_exc()
-    input("Press Enter to exit...")
+    if sys.stdin is not None and sys.stdin.isatty():
+        input("Press Enter to exit...")        # keep a console window open to read it
+    else:
+        raise                                  # no console (e.g. Android): main.py reports it
 
 pygame.quit()
 sys.exit()

@@ -24,6 +24,20 @@ _cache = {}
 _face = {}
 
 
+def _on_android():
+    import sys
+    return (hasattr(sys, "getandroidapilevel") or "ANDROID_ARGUMENT" in os.environ
+            or "ANDROID_PRIVATE" in os.environ)
+
+
+def _match(name):
+    """pygame.font.match_font, but a failed system font lookup just means 'not found'."""
+    try:
+        return pygame.font.match_font(name)
+    except Exception:
+        return None
+
+
 def _is_georgia(path):
     return bool(path) and os.path.basename(path).lower().startswith("georgia")
 
@@ -31,15 +45,21 @@ def _is_georgia(path):
 def _pick():
     """('georgia', None) when Georgia is installed, else (family name, None) of the first
     installed fallback, else (None, None) for pygame's built-in font."""
+    if "pick" not in _face and _on_android():
+        # pygame's font lookup runs a Linux tool phones don't have (and Android may
+        # refuse to let the app run it), so go straight to the phone's own font
+        _face["pick"] = "android:notoserif" if os.path.exists(
+            os.path.join(_ANDROID_DIR, _ANDROID_FILES[(False, False)])) else None
+        print(f"Fonts: using {_face['pick'] or 'the built-in font'} (Android)")
     if "pick" not in _face:
-        if _is_georgia(pygame.font.match_font("georgia")):
+        if _is_georgia(_match("georgia")):
             _face["pick"] = "georgia"
         else:
             # match_font quietly substitutes a look-alike for a missing name, so check the
             # file it found really is the family that was asked for
             _face["pick"] = None
             for name in _FALLBACKS:
-                p = pygame.font.match_font(name)
+                p = _match(name)
                 if p and name[:5] in os.path.basename(p).lower().replace(" ", "").replace("-", ""):
                     _face["pick"] = name
                     break
