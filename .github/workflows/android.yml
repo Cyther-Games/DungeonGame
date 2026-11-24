@@ -1,12 +1,15 @@
 # Builds the Android app (an APK) on GitHub's servers.
-# Run it from the repository's Actions tab: "Android build" > "Run workflow".
+# It runs on every push to main (and on v* tags), or from the Actions tab:
+# "Android build" > "Run workflow".
 # When it finishes, the APK is under the run's Artifacts as "Dungeon-android".
 name: Android build
 
 on:
   workflow_dispatch:
   push:
+    branches: [main]
     tags: ["v*"]
+    paths-ignore: ["**.md"]
 
 jobs:
   apk:
@@ -43,7 +46,23 @@ jobs:
           restore-keys: buildozer-${{ runner.os }}-
 
       - name: Build the APK
-        run: yes | buildozer -v android debug
+        run: |
+          { yes | buildozer -v android debug; } 2>&1 | tee build.log
+          exit ${PIPESTATUS[0]}
+
+      # Build logs need a GitHub sign-in to read, but a run's annotations don't: when the
+      # build fails, put its errors and last lines in one, so anyone can see why.
+      - name: Show why the build failed
+        if: failure()
+        run: |
+          {
+            echo "--- error lines ---"
+            grep -nE "Error|error:|Exception|Traceback|FAILED|No such file|not found" build.log | tail -n 40
+            echo "--- last lines ---"
+            tail -n 70 build.log
+          } | cut -c1-220 > why.txt || true
+          msg=$(sed -e 's/%/%25/g' why.txt | awk '{printf "%s%%0A", $0}')
+          echo "::error title=Android build failed::${msg}"
 
       - uses: actions/upload-artifact@v4
         with:
