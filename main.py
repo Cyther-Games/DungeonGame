@@ -73,8 +73,18 @@ if ON_ANDROID:
     crash_log = open(CRASH_FILE, "w", encoding="utf-8")
     faulthandler.enable(crash_log)
 
+def game_file():
+    """move.py - or, in the Android app, move.pyc: the build compiles the game's code and
+    leaves out the .py files."""
+    for name in ("move.py", "move.pyc"):
+        path = os.path.join(HERE, name)
+        if os.path.exists(path):
+            return path
+    return os.path.join(HERE, "move.py")     # not there: let the error say so
+
+
 try:
-    runpy.run_path(os.path.join(HERE, "move.py"), run_name="__main__")
+    runpy.run_path(game_file(), run_name="__main__")
 except SystemExit:
     pass
 except BaseException:
