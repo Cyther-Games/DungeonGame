@@ -1898,23 +1898,42 @@ clock = pygame.time.Clock(); dt = 0
 _img_tobytes = getattr(pygame.image, "tobytes", None) or pygame.image.tostring
 _img_frombytes = getattr(pygame.image, "frombytes", None) or pygame.image.fromstring
 
-# Every image the game loads goes through load_image(). If this pygame can't read PNGs
-# (its PNG module needs libraries the Android build may not have), it reads the .rgbz copy
-# the Android build makes of each PNG instead: "RGBZ", width, height, then zlib-packed
-# RGBA pixels - no image library needed (see .github/workflows/pack_images.py).
+# Every image the game loads goes through load_image(). The Android build also makes an
+# .rgbz copy of each PNG: "RGBZ", width, height, then zlib-packed RGBA pixels - no image
+# library needed (see .github/workflows/pack_images.py). On Android those copies are used
+# first (on the phone, pygame's PNG support can be there in name but fail on every file,
+# and the copies are smaller and quicker to load anyway); anywhere, a PNG that fails to
+# load falls back to its copy. _image_errors keeps the first failures, for the timing line.
 _PNG_OK = pygame.image.get_extended()
+_image_errors = []
+
+
+def _load_rgbz(path):
+    with open(path, "rb") as f:
+        data = f.read()
+    if data[:4] != b"RGBZ":
+        raise pygame.error(f"{path}: not an RGBZ file")
+    w = int.from_bytes(data[4:8], "little")
+    h = int.from_bytes(data[8:12], "little")
+    return _img_frombytes(zlib.decompress(data[12:]), (w, h), "RGBA")
 
 
 def load_image(path):
     alt = os.path.splitext(path)[0] + ".rgbz"
-    if not _PNG_OK and os.path.exists(alt):
-        with open(alt, "rb") as f:
-            data = f.read()
-        if data[:4] == b"RGBZ":
-            w = int.from_bytes(data[4:8], "little")
-            h = int.from_bytes(data[8:12], "little")
-            return _img_frombytes(zlib.decompress(data[12:]), (w, h), "RGBA")
-    return pygame.image.load(path)
+    has_alt = os.path.exists(alt)
+    if has_alt and (touch.ON_ANDROID or not _PNG_OK):
+        try:
+            return _load_rgbz(alt)
+        except Exception as e:
+            _image_errors.append(f"{os.path.basename(alt)}: {e}")
+    try:
+        return pygame.image.load(path)
+    except (pygame.error, FileNotFoundError, OSError) as e:
+        if len(_image_errors) < 5:
+            _image_errors.append(f"{os.path.basename(path)}: {e}")
+        if has_alt:
+            return _load_rgbz(alt)
+        raise
 
 
 def _load_serif(size, bold=False):
@@ -3386,7 +3405,7 @@ def transition_active():
 
 def begin_transition(on_switch):
     """Freeze the frame, dissolve it, run on_switch at the blackout, then resolve back in."""
-    _trans["snap"] = screen.copy()
+    _trans["snap"] = main_menu.snapshot(screen)
     _trans["phase"] = "out"
     _trans["t"] = 0.0
     _trans["on_switch"] = on_switch
@@ -3398,7 +3417,7 @@ def begin_game_intro(snapshot=None):
     or the Defeated / Victory card on a retry) dissolves into blocks and the dungeon
     resolves out of them. The snapshot is taken before any video-mode change, so it's
     rescaled if the resolution moved in between."""
-    snap = snapshot if snapshot is not None else screen.copy()
+    snap = snapshot if snapshot is not None else main_menu.snapshot(screen)
     if snap.get_size() != screen.get_size():
         snap = pygame.transform.smoothscale(snap, screen.get_size())
     begin_transition(None)
@@ -3446,7 +3465,7 @@ def draw_transition(render_current):
         amount = prog ** 1.5
     else:
         render_current()            # draw the new state, then crush it
-        base = screen.copy()
+        base = main_menu.snapshot(screen)
         amount = (1.0 - prog) ** 1.5
     if base is None:
         return
@@ -5701,7 +5720,7 @@ _menu_result = _main_menu()
 if _menu_result not in ("continue", "openworld", "limitless", "stages"):
     pygame.quit()
     sys.exit()
-_menu_snapshot = screen.copy()        # the menu's last frame, dissolved on the way in
+_menu_snapshot = main_menu.snapshot(screen)        # the menu's last frame, dissolved on the way in
 _apply_video_settings_for_gameplay()
 
 
@@ -5930,7 +5949,29 @@ def draw_glow_rect(surface, rect, color, border_radius=6, layers=5, max_alpha=90
     key = ("glow", rect.width, rect.height, tuple(color[:3]), border_radius, layers, max_alpha, spread)
     glow = _gfx_cached(key, lambda: _make_glow(rect.width, rect.height, color, border_radius,
                                                layers, max_alpha, spread))
+    if surface is screen and main_menu.world_under():
+        # Two-layer drawing (Android): the world isn't on this canvas for the glow to add
+        # its light to, so draw the bright ring that adding would have made instead.
+        ring = _gfx_cached(("glow-over", key), lambda: _glow_as_ring(glow))
+        surface.blit(ring, (rect.x - spread, rect.y - spread))
+        return
     surface.blit(glow, (rect.x - spread, rect.y - spread), special_flags=pygame.BLEND_RGBA_ADD)
+
+
+def _glow_as_ring(glow):
+    """An additive glow turned into an ordinary see-through one that looks about the same
+    over the world: where the glow has any light, a lighter, mostly opaque ring."""
+    import numpy as np
+    w, h = glow.get_size()
+    px = np.frombuffer(_img_tobytes(glow, "RGBA"), np.uint8).reshape(h, w, 4).astype(np.int32)
+    # adding light ignores alpha: any pixel with colour brightens what's under it, even
+    # the glow's outer band, whose alpha is 0
+    # what adding it to typical ground (~(70, 110, 60)) gives, nearly opaque
+    lit = px[..., :3].max(axis=2) > 0
+    added = np.minimum(255, px[..., :3] + np.array([70, 110, 60]))
+    px[..., :3] = np.where(lit[..., None], added, px[..., :3])
+    px[..., 3] = np.where(lit, 235, 0)
+    return _img_frombytes(px.astype(np.uint8).tobytes(), (w, h), "RGBA").convert_alpha()
 
 
 def _make_glow(w, h, color, border_radius, layers, max_alpha, spread):
@@ -7463,12 +7504,17 @@ def render_explore():
         view = pygame.Surface((vw, vh)).convert()
         _view_cache[(vw, vh)] = view
     draw_world(view, cam_x, cam_y)
-    scaled = _view_cache.get(("scaled", vw, vh, S))
-    if scaled is None:
-        scaled = pygame.Surface((vw * S, vh * S)).convert()
-        _view_cache[("scaled", vw, vh, S)] = scaled
-    pygame.transform.scale(view, (vw * S, vh * S), scaled)
-    screen.blit(scaled, (0, 0))
+    if main_menu.gpu_layers_on() and not transition_active() and not ascension_active():
+        # the graphics chip enlarges the world under everything drawn from here on
+        screen.fill((0, 0, 0, 0))
+        main_menu.world_layer(view, S)
+    else:
+        scaled = _view_cache.get(("scaled", vw, vh, S))
+        if scaled is None:
+            scaled = pygame.Surface((vw * S, vh * S)).convert()
+            _view_cache[("scaled", vw, vh, S)] = scaled
+        pygame.transform.scale(view, (vw * S, vh * S), scaled)
+        screen.blit(scaled, (0, 0))
 
     draw_location_banner()
     draw_enemy_trackers(cam_x, cam_y, S)
@@ -8096,7 +8142,7 @@ def ascension_total():
 
 def begin_ascension(base, true_name, full=True):
     _ascend.update({"active": True, "t": 0.0, "base": base, "true": true_name,
-                    "snap": screen.copy(), "full": full, "fired": set(), "tick": 0.0})
+                    "snap": main_menu.snapshot(screen), "full": full, "fired": set(), "tick": 0.0})
     vfx_clear()
 
 
@@ -8894,7 +8940,7 @@ def end_screen_action(index):
     """Retry / Main Menu / Quit, from either a click or a hotkey."""
     global running, game_state
     if index == END_BTN_RETRY:
-        snap = screen.copy()
+        snap = main_menu.snapshot(screen)
         reset_game()          # fresh run from Stage 1; also returns to STATE_EXPLORE
         begin_game_intro(snap)
         print("Retrying from Stage 1.")
@@ -8905,7 +8951,7 @@ def end_screen_action(index):
         else:
             _apply_video_settings_for_gameplay()   # pick up any video setting changes
             start_from_menu(result)
-            snap = screen.copy()
+            snap = main_menu.snapshot(screen)
             begin_game_intro(snap)
     else:
         running = False
@@ -11164,7 +11210,8 @@ def _draw_timings():
     t = _timing
     line = (f"{_fps_meter['fps']:.0f} fps  |  logic {t['logic']:.0f}  world {t['world']:.0f}  "
             f"ui {max(0.0, t['draw'] - t['world']):.0f}  show {t['show']:.0f}  frame {t['frame']:.0f} ms  |  "
-            f"PNG {'yes' if _PNG_OK else 'no'}")
+            f"PNG {'yes' if _PNG_OK else 'no'}  icons {len(element_icons)}/{len(ELEMENT_ICONS_MAP)}"
+            + (f"  [{_image_errors[0][:60]}]" if _image_errors else ""))
     img = small_font.render(line, True, (255, 240, 200))
     bg = pygame.Surface((img.get_width() + 12, img.get_height() + 4), pygame.SRCALPHA)
     bg.fill((0, 0, 0, 150))
@@ -11246,7 +11293,7 @@ try:
                     else:
                         _apply_video_settings_for_gameplay() # pick up any video setting changes
                         start_from_menu(_menu_result)
-                        _menu_snapshot = screen.copy()
+                        _menu_snapshot = main_menu.snapshot(screen)
                         begin_game_intro(_menu_snapshot)
 
             # --- End screen (Game Over / Victory) mouse clicks ---

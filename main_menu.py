@@ -232,7 +232,7 @@ def _shown_size(size, fullscreen):
 def _sharp_factor(size, shown):
     """How many times bigger to hand the picture over for sharp scaling (see open_window).
     1 when it isn't being enlarged."""
-    if ON_ANDROID:
+    if ON_ANDROID or gpu_layers_wanted():
         return 1      # a phone's graphics chip scales fine, and the extra work drains battery
     f = min(shown[0] / size[0], shown[1] / size[1])
     if f <= 1.05:
@@ -329,10 +329,101 @@ def open_window(size=None, fullscreen=None):
         if scaled and not fullscreen:
             _fit_window(shown)
     canvas = pygame.Surface(size).convert() if k > 1 else disp
+    _gpu.update(on=False, world_tex=None, world_size=None, layer=None, last=None)
+    if scaled and k == 1 and gpu_layers_wanted():
+        canvas = _start_gpu_layers(size) or canvas
     _view.update(canvas=canvas, size=size, k=k)
     settings["fullscreen"] = bool(fullscreen)
     pygame.display.set_caption(CAPTION)
     return canvas
+
+
+# ---------------------------------------------------------------------------
+# Two layers on the graphics chip (Android)
+#
+# The world is drawn at low resolution (a pixel-art "view", about a third of the screen's
+# size each way) and has to be enlarged to fill the screen. Doing that on the processor
+# every frame - about 800,000 pixels - is cheap on a PC but most of a phone's frame time.
+# Instead, the world and everything drawn over it (HUD, buttons, text) go to the graphics
+# chip as two pictures and it stacks them: the world enlarged with hard pixel edges, the
+# rest on top. The game then draws its UI on a see-through canvas, and render_explore()
+# hands over the world with world_layer() rather than enlarging it itself.
+# ---------------------------------------------------------------------------
+_gpu = {"on": False, "ren": None, "ui_tex": None, "world_tex": None, "world_size": None,
+        "layer": None, "last": None}
+
+
+def gpu_layers_wanted():
+    return ON_ANDROID or os.environ.get("DUNGEON_GPU_LAYERS") == "1"
+
+
+def _start_gpu_layers(size):
+    try:
+        from pygame._sdl2.video import Renderer, Texture
+        ren = Renderer.from_window(_sdl_window())
+        tex = Texture(ren, size, streaming=True)
+        tex.blend_mode = 1                                    # SDL_BLENDMODE_BLEND
+        canvas = pygame.Surface(size, pygame.SRCALPHA)
+        _gpu.update(on=True, ren=ren, ui_tex=tex)
+        return canvas
+    except Exception as e:
+        print(f"Two-layer drawing unavailable ({e}); drawing the usual way")
+        _gpu["on"] = False
+        return None
+
+
+def gpu_layers_on():
+    return _gpu["on"]
+
+
+def world_layer(view, scale):
+    """This frame's world picture and how many times to enlarge it (see above)."""
+    _gpu["layer"] = (view, scale)
+
+
+def world_under():
+    """True while drawing a frame whose world is on its own layer underneath the canvas."""
+    return _gpu["on"] and _gpu["layer"] is not None
+
+
+def snapshot(surface):
+    """A copy of what's on screen, for fades and transitions: with two-layer drawing the
+    world isn't in `surface`, so it's put back underneath."""
+    if not _gpu["on"]:
+        return surface.copy()
+    out = pygame.Surface(surface.get_size()).convert()
+    out.fill((0, 0, 0))
+    lay = _gpu["layer"] or _gpu["last"]
+    if lay is not None:
+        view, s = lay
+        out.blit(pygame.transform.scale(view, (view.get_width() * s, view.get_height() * s)), (0, 0))
+    out.blit(surface, (0, 0))
+    return out
+
+
+def _present_gpu():
+    g = _gpu
+    ren = g["ren"]
+    ren.draw_color = (0, 0, 0, 255)
+    ren.clear()
+    lay = g["layer"]
+    if lay is not None:
+        view, s = lay
+        if g["world_size"] != view.get_size():
+            from pygame._sdl2.video import Texture
+            old = os.environ.get("SDL_RENDER_SCALE_QUALITY")
+            os.environ["SDL_RENDER_SCALE_QUALITY"] = "nearest"        # hard pixel edges
+            try:
+                g["world_tex"] = Texture(ren, view.get_size(), streaming=True)
+            finally:
+                os.environ["SDL_RENDER_SCALE_QUALITY"] = old or "linear"
+            g["world_size"] = view.get_size()
+        g["world_tex"].update(view)
+        g["world_tex"].draw(dstrect=pygame.Rect(0, 0, view.get_width() * s, view.get_height() * s))
+    g["ui_tex"].update(_view["canvas"])
+    g["ui_tex"].draw()
+    ren.present()
+    g["last"], g["layer"] = lay, None
 
 
 def current_surface():
@@ -342,6 +433,17 @@ def current_surface():
 
 def present():
     """Show the finished frame: use this instead of pygame.display.flip()."""
+    if _gpu["on"]:
+        try:
+            _present_gpu()
+            return
+        except Exception as e:
+            print(f"Two-layer drawing failed ({e}); drawing the usual way from now on")
+            _gpu["on"] = False
+    disp = pygame.display.get_surface()
+    canvas = _view["canvas"]
+    if _view["k"] == 1 and canvas is not None and disp is not None and canvas is not disp:
+        disp.blit(canvas, (0, 0))          # drawing on our own canvas: after a fallback
     if _view["k"] > 1 and _view["canvas"] is not None:
         disp = pygame.display.get_surface()
         if disp is not None:
