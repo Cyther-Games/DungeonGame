@@ -1,0 +1,72 @@
+{
+  "armour": {
+    "helmet": [
+      { "name": "Worn Helmet", "rarity": "Common", "element": "None", "setId": null },
+
+      { "name": "Tidewoven Helm", "rarity": "Common", "element": "Water", "setId": "SET_WATER_T1" },
+      { "name": "Stonehide Helm", "rarity": "Common", "element": "Earth", "setId": "SET_EARTH_T1" },
+      { "name": "Cinderbound Helm", "rarity": "Common", "element": "Fire", "setId": "SET_FIRE_T1" },
+      { "name": "Windstep Hood", "rarity": "Common", "element": "Wind", "setId": "SET_WIND_T1" },
+      { "name": "Voltguard Visor", "rarity": "Common", "element": "Lightning", "setId": "SET_LIGHTNING_T1" },
+
+      { "name": "Frostguard Helm", "rarity": "Uncommon", "element": "Ice", "setId": "SET_ICE_T2" },
+      { "name": "Moltenbound Helm", "rarity": "Uncommon", "element": "Lava", "setId": "SET_LAVA_T2" },
+      { "name": "Bloodbound Helm", "rarity": "Uncommon", "element": "Blood", "setId": "SET_BLOOD_T2" },
+
+      { "name": "Paradox Helm", "rarity": "Rare", "element": "Frost Fire", "setId": "SET_FROSTFIRE_T3" },
+      { "name": "Momentum Helm", "rarity": "Epic", "element": "Kinetic", "setId": "SET_KINETIC_T4" },
+
+      { "name": "Gravitas Helm", "rarity": "Legendary", "element": "Gravity", "setId": "SET_GRAVITY_T5" },
+      { "name": "Chronoguard Mask", "rarity": "Legendary", "element": "Time", "setId": "SET_TIME_T5" },
+
+      { "name": "Seraphim’s Crown", "rarity": "Mythical", "element": "None", "setId": null },
+      { "name": "Totality Mask", "rarity": "Mythical", "element": "Eclipse", "setId": "SET_ECLIPSE_T7" }
+    ],
+
+    "chest": [
+      { "name": "Cloth Tunic", "rarity": "Common", "element": "None", "setId": null },
+
+      { "name": "Tidewoven Vest", "rarity": "Common", "element": "Water", "setId": "SET_WATER_T1" },
+      { "name": "Stonehide Chestplate", "rarity": "Common", "element": "Earth", "setId": "SET_EARTH_T1" },
+      { "name": "Cinderbound Mail", "rarity": "Common", "element": "Fire", "setId": "SET_FIRE_T1" },
+      { "name": "Windstep Garb", "rarity": "Common", "element": "Wind", "setId": "SET_WIND_T1" },
+      { "name": "Voltguard Harness", "rarity": "Common", "element": "Lightning", "setId": "SET_LIGHTNING_T1" },
+
+      { "name": "Frostguard Plate", "rarity": "Uncommon", "element": "Ice", "setId": "SET_ICE_T2" },
+      { "name": "Moltenbound Armour", "rarity": "Uncommon", "element": "Lava", "setId": "SET_LAVA_T2" },
+      { "name": "Bloodbound Carapace", "rarity": "Uncommon", "element": "Blood", "setId": "SET_BLOOD_T2" },
+
+      { "name": "Paradox Flameplate", "rarity": "Rare", "element": "Frost Fire", "setId": "SET_FROSTFIRE_T3" },
+      { "name": "Momentum Frame", "rarity": "Epic", "element": "Kinetic", "setId": "SET_KINETIC_T4" },
+
+      { "name": "Worldbinder Plate", "rarity": "Legendary", "element": "Gravity", "setId": "SET_GRAVITY_T5" },
+      { "name": "Chronoguard Vestment", "rarity": "Legendary", "element": "Time", "setId": "SET_TIME_T5" },
+
+      { "name": "Aethernox Shell of Eternity", "rarity": "Mythical", "element": "None", "setId": null },
+      { "name": "Totality Nullplate", "rarity": "Mythical", "element": "Eclipse", "setId": "SET_ECLIPSE_T7" }
+    ],
+
+    "boots": [
+      { "name": "Reinforced Boots", "rarity": "Common", "element": "None", "setId": null },
+
+      { "name": "Tidewoven Greaves", "rarity": "Common", "element": "Water", "setId": "SET_WATER_T1" },
+      { "name": "Stonehide Legguards", "rarity": "Common", "element": "Earth", "setId": "SET_EARTH_T1" },
+      { "name": "Cinderbound Treads", "rarity": "Common", "element": "Fire", "setId": "SET_FIRE_T1" },
+      { "name": "Windstep Boots", "rarity": "Common", "element": "Wind", "setId": "SET_WIND_T1" },
+      { "name": "Voltguard Greaves", "rarity": "Common", "element": "Lightning", "setId": "SET_LIGHTNING_T1" },
+
+      { "name": "Frostguard Sabatons", "rarity": "Uncommon", "element": "Ice", "setId": "SET_ICE_T2" },
+      { "name": "Moltenbound Greaves", "rarity": "Uncommon", "element": "Lava", "setId": "SET_LAVA_T2" },
+      { "name": "Bloodbound Greaves", "rarity": "Uncommon", "element": "Blood", "setId": "SET_BLOOD_T2" },
+
+      { "name": "Paradox Greaves", "rarity": "Rare", "element": "Frost Fire", "setId": "SET_FROSTFIRE_T3" },
+      { "name": "Momentum Stabilizers", "rarity": "Epic", "element": "Kinetic", "setId": "SET_KINETIC_T4" },
+
+      { "name": "Gravitas Anchors", "rarity": "Legendary", "element": "Gravity", "setId": "SET_GRAVITY_T5" },
+      { "name": "Chronoguard Treads", "rarity": "Legendary", "element": "Time", "setId": "SET_TIME_T5" },
+
+      { "name": "Voidbound Greaves", "rarity": "Mythical", "element": "None", "setId": null },
+      { "name": "Totality Greaves", "rarity": "Mythical", "element": "Eclipse", "setId": "SET_ECLIPSE_T7" }
+    ]
+  }
+}

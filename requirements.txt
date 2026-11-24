@@ -1,0 +1,5 @@
+# What the game needs. run.sh installs these into .venv/ on its first run.
+# pygame has no build for Python 3.14+ yet; pygame-ce (a drop-in fork) does.
+pygame>=2.1.3; python_version < "3.14"
+pygame-ce>=2.5; python_version >= "3.14"
+numpy

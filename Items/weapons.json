@@ -1,0 +1,164 @@
+{
+  "weapons": [
+    {
+      "rarity": "Common",
+      "dropRate": 20,
+      "meleeBoost": 5,
+      "magicBoost": 5,
+      "items": [
+        { "name": "Rusted Short Sword", "type": "Normal", "element": "None" },
+        { "name": "Wooden Club", "type": "Normal", "element": "None" },
+        { "name": "Iron Dagger", "type": "Normal", "element": "None" },
+        { "name": "Hunting Bow", "type": "Normal", "element": "None" },
+        { "name": "Cracked Spear", "type": "Normal", "element": "None" },
+        { "name": "Stone Axe", "type": "Normal", "element": "None" },
+
+        { "name": "Tidecarver Blade", "type": "Elemental", "element": "Water" },
+        { "name": "Stonewarden Hammer", "type": "Elemental", "element": "Earth" },
+        { "name": "Cinderbrand Sword", "type": "Elemental", "element": "Fire" },
+        { "name": "Skydancer Blades", "type": "Elemental", "element": "Wind" },
+        { "name": "Voltstrike Rapier", "type": "Elemental", "element": "Lightning" },
+
+        { "name": "Apprentice's Wand", "type": "Magic", "element": "None" },
+        { "name": "Cracked Crystal Orb", "type": "Magic", "element": "None" },
+
+        { "name": "Tidewhisper Wand", "type": "Magic", "element": "Water" },
+        { "name": "Loamroot Staff", "type": "Magic", "element": "Earth" },
+        { "name": "Emberglass Rod", "type": "Magic", "element": "Fire" },
+        { "name": "Zephyr Reed Wand", "type": "Magic", "element": "Wind" },
+        { "name": "Sparkcoil Sceptre", "type": "Magic", "element": "Lightning" }
+      ]
+    },
+    {
+      "rarity": "Uncommon",
+      "dropRate": 10,
+      "meleeBoost": 10,
+      "magicBoost": 10,
+      "items": [
+        { "name": "Steel Longsword", "type": "Normal", "element": "None" },
+        { "name": "Reinforced Mace", "type": "Normal", "element": "None" },
+        { "name": "Serrated Knife", "type": "Normal", "element": "None" },
+        { "name": "Oak Composite Bow", "type": "Normal", "element": "None" },
+        { "name": "Guard’s Halberd", "type": "Normal", "element": "None" },
+        { "name": "Balanced Throwing Axes", "type": "Normal", "element": "None" },
+
+        { "name": "Glacier Fang Spear", "type": "Elemental", "element": "Ice" },
+        { "name": "Veil of the Drowned", "type": "Elemental", "element": "Mist" },
+        { "name": "Dunescourge Scimitar", "type": "Elemental", "element": "Sand" },
+        { "name": "Iron Dominion Greatsword", "type": "Elemental", "element": "Metal" },
+        { "name": "Bogbreaker Mace", "type": "Elemental", "element": "Mud" },
+        { "name": "Ashwind Bow", "type": "Elemental", "element": "Dust" },
+        { "name": "Blastcoil Gauntlets", "type": "Elemental", "element": "Combustion" },
+        { "name": "Hellpyre Great Axe", "type": "Elemental", "element": "Inferno" },
+        { "name": "Steamveil Whip", "type": "Elemental", "element": "Mist" },
+        { "name": "Zephyr Pike", "type": "Elemental", "element": "Gale" },
+        { "name": "Thunderlord Warhammer", "type": "Elemental", "element": "Storm" },
+        { "name": "Plasmacore Cannon", "type": "Elemental", "element": "Plasma" },
+        { "name": "Moltenbreaker Cleaver", "type": "Elemental", "element": "Lava" },
+        { "name": "Sanguine Fang", "type": "Elemental", "element": "Blood" },
+
+        { "name": "Journeyman's Staff", "type": "Magic", "element": "None" },
+        { "name": "Runed Spellbook", "type": "Magic", "element": "None" },
+
+        { "name": "Rimefrost Sceptre", "type": "Magic", "element": "Ice" },
+        { "name": "Fogweaver Censer", "type": "Magic", "element": "Mist" },
+        { "name": "Dunesong Hourglass", "type": "Magic", "element": "Sand" },
+        { "name": "Quicksilver Focus", "type": "Magic", "element": "Metal" },
+        { "name": "Mirecaller Staff", "type": "Magic", "element": "Mud" },
+        { "name": "Ashveil Grimoire", "type": "Magic", "element": "Dust" },
+        { "name": "Flashpoint Orb", "type": "Magic", "element": "Combustion" },
+        { "name": "Pyreheart Tome", "type": "Magic", "element": "Inferno" },
+        { "name": "Stormglass Rod", "type": "Magic", "element": "Storm" },
+        { "name": "Galeharp", "type": "Magic", "element": "Gale" },
+        { "name": "Ionflare Prism", "type": "Magic", "element": "Plasma" },
+        { "name": "Magmaheart Staff", "type": "Magic", "element": "Lava" },
+        { "name": "Heartvein Chalice", "type": "Magic", "element": "Blood" }
+      ]
+    },
+    {
+      "rarity": "Rare",
+      "dropRate": 5,
+      "meleeBoost": 15,
+      "magicBoost": 15,
+      "items": [
+        { "name": "Paradox Emberblade", "type": "Elemental", "element": "Frost Fire" },
+        { "name": "Elderbloom Staff", "type": "Elemental", "element": "Wood" },
+        { "name": "Aetherdrive Blade", "type": "Elemental", "element": "Energy" },
+        { "name": "Fission Edge", "type": "Elemental", "element": "Nuclear" },
+
+        { "name": "Arcanist's Rod", "type": "Magic", "element": "None" },
+        { "name": "Silverleaf Grimoire", "type": "Magic", "element": "None" },
+
+        { "name": "Paradox Lantern", "type": "Magic", "element": "Frost Fire" },
+        { "name": "Heartwood Codex", "type": "Magic", "element": "Wood" },
+        { "name": "Resonance Crystal", "type": "Magic", "element": "Energy" },
+        { "name": "Isotope Reliquary", "type": "Magic", "element": "Nuclear" },
+        { "name": "Damnation Censer", "type": "Magic", "element": "Hell Fire" },
+        { "name": "Faultline Rod", "type": "Magic", "element": "Tectonic Earth" },
+        { "name": "Leviathan's Pearl", "type": "Magic", "element": "Abyssal Water" },
+        { "name": "Eye of the Tempest", "type": "Magic", "element": "Tempest Wind" },
+        { "name": "Heavenbolt Sceptre", "type": "Magic", "element": "Celestial Lightning" }
+      ]
+    },
+    {
+      "rarity": "Epic",
+      "dropRate": 3,
+      "meleeBoost": 20,
+      "magicBoost": 20,
+      "items": [
+        { "name": "Momentum Breaker", "type": "Elemental", "element": "Kinetic" },
+        { "name": "Gravity Coil Staff", "type": "Elemental", "element": "Potential" },
+        { "name": "Matter Reforge Axe", "type": "Elemental", "element": "Matter" },
+        { "name": "Singularity Reaver", "type": "Elemental", "element": "Dark Matter" },
+
+        { "name": "Archmage's Sceptre", "type": "Magic", "element": "None" },
+        { "name": "Prism of Many Lights", "type": "Magic", "element": "None" },
+
+        { "name": "Inertia Sceptre", "type": "Magic", "element": "Kinetic" },
+        { "name": "Wellspring Orb", "type": "Magic", "element": "Potential" },
+        { "name": "Transmuter's Tome", "type": "Magic", "element": "Matter" },
+        { "name": "Voidheart Grimoire", "type": "Magic", "element": "Dark Matter" }
+      ]
+    },
+    {
+      "rarity": "Legendary",
+      "dropRate": 1,
+      "meleeBoost": 25,
+      "magicBoost": 25,
+      "items": [
+        { "name": "Umbral Sovereign Blade", "type": "Elemental", "element": "Dark" },
+        { "name": "Radiant Judicator Sword", "type": "Elemental", "element": "Light" },
+        { "name": "Chronoslicer", "type": "Elemental", "element": "Time" },
+        { "name": "Truthrender Blade", "type": "Elemental", "element": "Reality" },
+        { "name": "Voidstep Lance", "type": "Elemental", "element": "Space" },
+        { "name": "Gravitas Worldbinder", "type": "Elemental", "element": "Gravity" },
+
+        { "name": "Staff of the First Word", "type": "Magic", "element": "None" },
+        { "name": "Codex Infinitum", "type": "Magic", "element": "None" },
+
+        { "name": "Nightfall Codex", "type": "Magic", "element": "Dark" },
+        { "name": "Dawnspire Staff", "type": "Magic", "element": "Light" },
+        { "name": "Chronoglass Orb", "type": "Magic", "element": "Time" },
+        { "name": "Veritas Prism", "type": "Magic", "element": "Reality" },
+        { "name": "Starmap Astrolabe", "type": "Magic", "element": "Space" },
+        { "name": "Graviton Orb", "type": "Magic", "element": "Gravity" }
+      ]
+    },
+    {
+      "rarity": "Mythical",
+      "dropRate": 0.5,
+      "meleeBoost": 30,
+      "magicBoost": 30,
+      "items": [
+        { "name": "Wand of Unmaking", "type": "Magic", "element": "None" },
+        { "name": "Orb of the Origin", "type": "Magic", "element": "None" },
+
+        { "name": "Umbra Lantern", "type": "Magic", "element": "Shadow" },
+        { "name": "Moonwell Chalice", "type": "Magic", "element": "Lunar" },
+        { "name": "Sunforge Sceptre", "type": "Magic", "element": "Solar" },
+        { "name": "Syzygy Orb", "type": "Magic", "element": "Eclipse" },
+        { "name": "Genesis Starstaff", "type": "Magic", "element": "Star Force" }
+      ]
+    }
+  ]
+}

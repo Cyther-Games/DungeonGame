@@ -1,0 +1,5 @@
+# Shell launchers must keep Unix line endings or they won't run on macOS / Linux,
+# even when the repository is cloned on Windows. run.bat keeps Windows ones.
+*.sh       text eol=lf
+*.command  text eol=lf
+*.bat      text eol=crlf

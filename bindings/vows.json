@@ -1,0 +1,272 @@
+[
+  {
+    "circle": "First Circle — Vows of Flesh",
+    "intro": "Body and blood. These trade HP, defense and the Defend action for raw force.",
+    "vows": [
+      {
+        "name": "Vow of the Open Wound",
+        "boon": "+40% melee strength.",
+        "cost": "You can no longer Defend.",
+        "flavour": "A guarded blow is a hesitant one."
+      },
+      {
+        "name": "Oath of Iron Skin",
+        "boon": "+50% defense.",
+        "cost": "-30% melee strength.",
+        "flavour": "Become the wall, and forget how to be the hammer."
+      },
+      {
+        "name": "Pact of the Last Breath",
+        "boon": "Below 25% HP, all damage you deal is doubled.",
+        "cost": "HP potions cannot be used.",
+        "flavour": "Only the dying know how hard they can strike."
+      },
+      {
+        "name": "Blood Tithe",
+        "boon": "+30% element strength.",
+        "cost": "Elemental attacks cost HP instead of MP.",
+        "flavour": "The element drinks, and it prefers you."
+      },
+      {
+        "name": "Covenant of the Martyr",
+        "boon": "Once per run, survive a killing blow with 1 HP.",
+        "cost": "-25% max HP for the rest of the run.",
+        "flavour": "Death is refused once. It remembers the insult."
+      }
+    ]
+  },
+  {
+    "circle": "Second Circle — Vows of the Element",
+    "intro": "Mana, overcharge and matchups. For players who live and die by their element.",
+    "vows": [
+      {
+        "name": "Covenant of the Unchanging",
+        "boon": "True Form unlocks at level 10 instead of 15; +25% element strength.",
+        "cost": "You can never rebind or reroll your element.",
+        "flavour": "Mastery is a door that only opens inward."
+      },
+      {
+        "name": "Oath of the Hollow Vessel",
+        "boon": "Charge restores double MP.",
+        "cost": "Max MP is halved.",
+        "flavour": "A shallow cup fills quickly."
+      },
+      {
+        "name": "Vow of the Overflow",
+        "boon": "Overcharge lasts until the end of combat instead of fading.",
+        "cost": "Every combat begins at 50% MP.",
+        "flavour": "Empty yourself, and the flood has somewhere to go."
+      },
+      {
+        "name": "Oath of the Weak Point",
+        "boon": "Super-effective hits deal x2.0 instead of x1.5.",
+        "cost": "Not-effective hits deal x0.25 instead of x0.5.",
+        "flavour": "Strike the crack, or strike nothing at all."
+      },
+      {
+        "name": "Vow of the Spent Star",
+        "boon": "Tier damage multiplier +50% against enemies of a lower tier.",
+        "cost": "Tier multiplier halved against enemies of a higher tier.",
+        "flavour": "A tyrant to the small; a candle to the great."
+      }
+    ]
+  },
+  {
+    "circle": "Third Circle — Vows of Restriction",
+    "intro": "Seal away one part of your kit to empower the rest. Simple, strong and easy to read at a glance.",
+    "vows": [
+      {
+        "name": "Magic Restriction — Vow of the Sealed Blade",
+        "boon": "+60% element (magic) strength.",
+        "cost": "You cannot use melee attacks.",
+        "flavour": "The blade is set down so the voice may carry."
+      },
+      {
+        "name": "Melee Restriction — Vow of the Silent Tongue",
+        "boon": "+60% melee strength.",
+        "cost": "You cannot use elemental (magic) attacks.",
+        "flavour": "Words fail. Steel does not."
+      },
+      {
+        "name": "Guard Restriction — Vow of the Bare Soul",
+        "boon": "+35% melee and element strength.",
+        "cost": "You cannot equip a helmet, chest or boots.",
+        "flavour": "Armour is a promise you intend to survive. Make no such promise."
+      },
+      {
+        "name": "Potion Restriction — Oath of the Empty Satchel",
+        "boon": "+30% max HP.",
+        "cost": "You cannot drink potions during combat.",
+        "flavour": "What you carry in, you carry out. Nothing more."
+      },
+      {
+        "name": "Awakening Restriction — Vow of Eternal Slumber",
+        "boon": "+20% to all stats, permanently.",
+        "cost": "You can never Awaken.",
+        "flavour": "The power sleeps in you, and you let it lie."
+      },
+      {
+        "name": "Charge Restriction — Vow of the Dry Well",
+        "boon": "Regain 10% MP automatically every combat turn.",
+        "cost": "You cannot use Charge.",
+        "flavour": "Do not draw from the well. Let the rain come to you."
+      },
+      {
+        "name": "Evolution Restriction — Oath of the Humble Root",
+        "boon": "True Form multiplier becomes x6 instead of x4.",
+        "cost": "Your element can never evolve above Tier 1 (True Form still allowed).",
+        "flavour": "The deepest roots never grow toward the sky."
+      },
+      {
+        "name": "Repetition Restriction — Oath of the Changing Step",
+        "boon": "+40% to all damage dealt.",
+        "cost": "You cannot use the same combat action two turns in a row.",
+        "flavour": "Never the same answer twice. The enemy never learns the question."
+      },
+      {
+        "name": "Defense Restriction — Vow of the Unflinching",
+        "boon": "Every enemy you kill restores 15% of your max HP.",
+        "cost": "You cannot Defend or Flee.",
+        "flavour": "Stand. Strike. Feed."
+      }
+    ]
+  },
+  {
+    "circle": "Fourth Circle — Vows of Fate",
+    "intro": "Spins, rebinding, evolution and levelling. The gambler's circle.",
+    "vows": [
+      {
+        "name": "Gambler's Oath",
+        "boon": "Earn double reroll spins.",
+        "cost": "Every rebind costs a random 1–6 spins.",
+        "flavour": "The dice owe you nothing, but they are generous liars."
+      },
+      {
+        "name": "Vow of the Rising Tier",
+        "boon": "Evolution rolls favour higher tiers.",
+        "cost": "XP required per level +50%.",
+        "flavour": "To climb higher, climb slower."
+      },
+      {
+        "name": "Oath of the Rootless",
+        "boon": "The first rebind on each stage is free.",
+        "cost": "You cannot rebind during a stage's final room / boss.",
+        "flavour": "A wanderer's element changes with the road."
+      },
+      {
+        "name": "Vow of the Scarred Page",
+        "boon": "+2 stat points every level-up.",
+        "cost": "Stat points can never be refunded or moved.",
+        "flavour": "Every choice is carved, never written."
+      }
+    ]
+  },
+  {
+    "circle": "Fifth Circle — Vows of the Hunt",
+    "intro": "Combat rules: fleeing, turn order, awakening.",
+    "vows": [
+      {
+        "name": "Vow of No Retreat",
+        "boon": "+25% XP from every kill.",
+        "cost": "You can never Flee.",
+        "flavour": "The door behind you was bricked shut by your own hand."
+      },
+      {
+        "name": "Oath of the First Strike",
+        "boon": "Your first attack in each combat deals triple damage.",
+        "cost": "The enemy always acts first.",
+        "flavour": "Let them swing. You will only need one answer."
+      },
+      {
+        "name": "Vow of the Long Awakening",
+        "boon": "Awakening lasts 2 turns longer.",
+        "cost": "Awakening cooldown is doubled.",
+        "flavour": "Wake fully, then sleep deeply."
+      },
+      {
+        "name": "Oath of the Early Waking",
+        "boon": "Awakening is available from level 1.",
+        "cost": "Each Awakening costs 20% of your max HP.",
+        "flavour": "You woke before your body was ready. It will make you pay."
+      },
+      {
+        "name": "Hunter's Vow",
+        "boon": "Enemy item drop chance doubled (30% → 60%).",
+        "cost": "50% more enemies spawn each stage.",
+        "flavour": "The dungeon feeds those who feed on it."
+      }
+    ]
+  },
+  {
+    "circle": "Sixth Circle — Vows of the Dark",
+    "intro": "Exploration, loot and gear.",
+    "vows": [
+      {
+        "name": "Vow of the Guttering Torch",
+        "boon": "Chests roll one rarity step higher.",
+        "cost": "Torch radius shrinks from 5.5 to 3 tiles.",
+        "flavour": "Treasure glitters brightest where no light reaches."
+      },
+      {
+        "name": "Oath of the Starved",
+        "boon": "+1 stat point per level-up and HP regenerates slowly while exploring.",
+        "cost": "You cannot drink potions.",
+        "flavour": "Hunger is a whetstone."
+      },
+      {
+        "name": "Vow of the Empty Hand",
+        "boon": "Melee strength gains +2 per level.",
+        "cost": "You cannot equip a weapon.",
+        "flavour": "Steel is a crutch for those who doubt their fists."
+      },
+      {
+        "name": "Covenant of Bare Iron",
+        "boon": "Armour defense boosts are doubled.",
+        "cost": "Armour grants no element boosts.",
+        "flavour": "Iron does not care what burns inside you."
+      },
+      {
+        "name": "Vow of Poverty",
+        "boon": "Every chest is guaranteed Rare or better.",
+        "cost": "Enemies never drop items.",
+        "flavour": "Take only from the dead who hid their wealth."
+      }
+    ]
+  },
+  {
+    "circle": "Forbidden Circle — Greater Vows",
+    "intro": "High-risk run-definers. Consider unlocking these only after clearing stage 3, or after a first victory.",
+    "vows": [
+      {
+        "name": "The Eclipse Covenant",
+        "boon": "All tier damage multipliers are doubled.",
+        "cost": "You lose 3% max HP every combat turn.",
+        "flavour": "Sun and moon in one hand — and the hand is burning."
+      },
+      {
+        "name": "Oath of One",
+        "boon": "Choose one stat: points spent there count one and a half times.",
+        "cost": "All other stats are locked at their base value.",
+        "flavour": "One pillar, raised to the sky. Nothing else holds the roof."
+      },
+      {
+        "name": "Vow of the Unbound",
+        "boon": "Start the run with 10 reroll spins.",
+        "cost": "You begin with no element bound until you spend one.",
+        "flavour": "Nothing is yours until you choose it."
+      },
+      {
+        "name": "Pact of the Final Stage",
+        "boon": "Double XP and double chest count.",
+        "cost": "The run ends in defeat if you die even once — no revives, no Martyr.",
+        "flavour": "The dungeon doubles the stakes. So do you."
+      },
+      {
+        "name": "Berserker",
+        "boon": "+1% damage for every 10 HP you are missing.",
+        "cost": "Enemies deal 15% more damage to you.",
+        "flavour": "Every wound is a door, and the rage walks through all of them."
+      }
+    ]
+  }
+]

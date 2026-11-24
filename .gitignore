@@ -1,0 +1,49 @@
+# Backup of the original first-person game (kept locally, not uploaded)
+Beta/
+
+# Python's compiled files, rebuilt automatically
+__pycache__/
+*.pyc
+
+# The game's Python environment made by run.sh on macOS / Linux
+.venv/
+
+# Your saved game
+saves/
+
+# Temporary files the game writes while saving
+*.tmp
+
+# Local Claude Code settings for this computer
+.claude/
+
+# System clutter
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- Not needed to run the game: kept on this computer, not uploaded ----
+# old prototypes and the art-generator scripts (their output is already saved in the
+# asset folders)
+DND.py
+code.py
+make_element_icons.py
+make_pixel_art.py
+make_true_icons.py
+make_vfx.py
+make_vow_cards.py
+# design documents, notes and prompts
+*.docx
+*.pdf
+*.md
+!README.md
+prompts.txt
+Prompts/
+log.txt
+# preview sheets and tile exports (the game builds its tiles in memory)
+tiles/
+icons/_sheet_*.png
+icons/*.ico
+images/_sheet_*.png
+images/_original_stock/
+vfx/_sheet_*.png
