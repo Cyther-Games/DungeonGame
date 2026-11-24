@@ -56,7 +56,7 @@ jobs:
       - name: Show why the build failed
         if: failure()
         run: |
-          sed -e 's/\[[0-9;]*m//g' build.log > plain.log
+          sed -e 's/\x1b\[[0-9;]*m//g' build.log > plain.log
           # where it stopped: buildozer's "Command failed" line, else the end of the log
           stop=$(grep -n -m1 -E "Command failed|Buildozer failed" plain.log | cut -d: -f1)
           stop=${stop:-$(wc -l < plain.log)}
