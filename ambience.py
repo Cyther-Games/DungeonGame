@@ -19,7 +19,9 @@ order: draw_ground (under everyone), draw_air (over everyone, still lit by day/n
 draw_glow (after lighting, so glowing things stay bright in the dark).
 """
 import math
+import os
 import random
+import sys
 
 import pygame
 
@@ -58,6 +60,11 @@ SPEC = {
                     sway=3.0, sf=2.5, wind=0.0, glow=True, twinkle=True, halo=2),
 }
 SPECIAL = {"rain", "splash", "glint", "butterfly", "smoke", "moth", "print", "kick"}
+
+# How many particles to keep, relative to the full amount: half on Android, where every
+# particle costs a phone several times what it costs a PC.
+DENSITY = 0.5 if (hasattr(sys, "getandroidapilevel") or "ANDROID_ARGUMENT" in os.environ
+                  or "ANDROID_PRIVATE" in os.environ) else 1.0
 
 # What each place gives off: [(kind, density per standard view)], by day and by night.
 OUTDOOR = {
@@ -226,7 +233,7 @@ class Ambience:
         self.wind = 0.75 + 0.35 * math.sin(now * 0.05) + 0.15 * math.sin(now * 0.31)
         self.rain = 0.2 + 0.8 * max(0.0, math.sin(now * 0.045 + 1.0))       # passing showers
         self.dayk = _smooth(_clamp((ctx["day"] - 0.2) / 0.35))
-        scale = (vw * vh) / STD_AREA
+        scale = (vw * vh) / STD_AREA * DENSITY
 
         # how many of each kind the view should hold, from a few samples across it
         est = {}

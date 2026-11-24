@@ -243,56 +243,74 @@ class TouchControls:
             self._font_size = size
         return self._font
 
+    def _sprite(self, kind, held, variant, r, u):
+        """One control drawn on its own small surface; cached, since redrawing them (or a
+        whole-screen layer) every frame is slow on a phone."""
+        key = (kind, held, variant, r, round(u, 3))
+        cache = self.__dict__.setdefault("_sprites", {})
+        spr = cache.get(key)
+        if spr is not None:
+            return spr
+        pad = max(2, int(3 * u))
+        spr = pygame.Surface((2 * r + 2 * pad, 2 * r + 2 * pad), pygame.SRCALPHA)
+        cx = cy = r + pad
+        line = max(2, int(2 * u))
+        if kind == "base":
+            pygame.draw.circle(spr, (10, 8, 6, 90), (cx, cy), r)
+            pygame.draw.circle(spr, (232, 205, 140, 150), (cx, cy), r, line)
+            for a in range(4):                                   # little direction marks
+                ang = a * math.pi / 2
+                c, s_ = math.cos(ang), math.sin(ang)
+                tip = (cx + c * r * 0.82, cy + s_ * r * 0.82)
+                side = r * 0.12
+                pts = [tip,
+                       (tip[0] - c * side * 1.4 + s_ * side, tip[1] - s_ * side * 1.4 - c * side),
+                       (tip[0] - c * side * 1.4 - s_ * side, tip[1] - s_ * side * 1.4 + c * side)]
+                pygame.draw.polygon(spr, (232, 205, 140, 140), pts)
+        elif kind == "knob":
+            pygame.draw.circle(spr, (250, 228, 170, 200 if held else 150), (cx, cy), r)
+            pygame.draw.circle(spr, (60, 44, 20, 200), (cx, cy), r, max(1, int(2 * u)))
+        elif kind == "use":
+            pygame.draw.circle(spr, (60, 120, 70, 210 if held else 150), (cx, cy), r)
+            pygame.draw.circle(spr, (232, 205, 140, 220), (cx, cy), r, line)
+            t = self._label_font(max(10, int(22 * u))).render("Use", True, (255, 248, 230))
+            spr.blit(t, (cx - t.get_width() // 2, cy - t.get_height() // 2))
+        elif kind == "corner":
+            pygame.draw.circle(spr, (10, 8, 6, 200 if held else 140), (cx, cy), r)
+            pygame.draw.circle(spr, (232, 205, 140, 220), (cx, cy), r, line)
+            col = (250, 236, 200, 240)
+            if variant == "pause":
+                bw, bh = max(3, int(5 * u)), int(r * 0.9)
+                for dx in (-int(r * 0.25), int(r * 0.25)):
+                    pygame.draw.rect(spr, col, (cx + dx - bw // 2, cy - bh // 2, bw, bh))
+            else:
+                k = r * 0.38
+                lw = max(2, int(4 * u))
+                pygame.draw.line(spr, col, (cx - k, cy - k), (cx + k, cy + k), lw)
+                pygame.draw.line(spr, col, (cx - k, cy + k), (cx + k, cy - k), lw)
+        cache[key] = spr
+        return spr
+
     def draw(self, surface):
         if not self.active:
             return
         g = self._geometry()
         u = self.size[1] / 600.0
         pressed = set(w for w in self.fingers.values() if w)
-        layer = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
+
+        def put(spr, cx, cy):
+            surface.blit(spr, (int(cx) - spr.get_width() // 2, int(cy) - spr.get_height() // 2))
 
         if self.show["stick"]:
             (cx, cy), r = g["stick"]
-            pygame.draw.circle(layer, (10, 8, 6, 90), (cx, cy), r)
-            pygame.draw.circle(layer, (232, 205, 140, 150), (cx, cy), r, max(2, int(2 * u)))
-            for a in range(4):                                   # little direction marks
-                ang = a * math.pi / 2
-                tip = (cx + math.cos(ang) * r * 0.82, cy + math.sin(ang) * r * 0.82)
-                side = r * 0.12
-                pts = [tip,
-                       (tip[0] - math.cos(ang) * side * 1.4 + math.sin(ang) * side, tip[1] - math.sin(ang) * side * 1.4 - math.cos(ang) * side),
-                       (tip[0] - math.cos(ang) * side * 1.4 - math.sin(ang) * side, tip[1] - math.sin(ang) * side * 1.4 + math.cos(ang) * side)]
-                pygame.draw.polygon(layer, (232, 205, 140, 140), pts)
+            put(self._sprite("base", False, None, r, u), cx, cy)
             kx, ky = cx, cy
             if self.stick_vec:
                 kx, ky = cx + self.stick_vec[0] * r * 0.62, cy + self.stick_vec[1] * r * 0.62
-            kr = int(30 * u)
-            held = "stick" in pressed
-            pygame.draw.circle(layer, (250, 228, 170, 200 if held else 150), (int(kx), int(ky)), kr)
-            pygame.draw.circle(layer, (60, 44, 20, 200), (int(kx), int(ky)), kr, max(1, int(2 * u)))
-
+            put(self._sprite("knob", "stick" in pressed, None, int(30 * u), u), kx, ky)
         if self.show["use"]:
             (cx, cy), r = g["use"]
-            held = "use" in pressed
-            pygame.draw.circle(layer, (60, 120, 70, 210 if held else 150), (cx, cy), r)
-            pygame.draw.circle(layer, (232, 205, 140, 220), (cx, cy), r, max(2, int(2 * u)))
-            t = self._label_font(max(10, int(22 * u))).render("Use", True, (255, 248, 230))
-            layer.blit(t, (cx - t.get_width() // 2, cy - t.get_height() // 2))
-
+            put(self._sprite("use", "use" in pressed, None, r, u), cx, cy)
         if self.show["corner"]:
             (cx, cy), r = g["corner"]
-            held = "corner" in pressed
-            pygame.draw.circle(layer, (10, 8, 6, 200 if held else 140), (cx, cy), r)
-            pygame.draw.circle(layer, (232, 205, 140, 220), (cx, cy), r, max(2, int(2 * u)))
-            col = (250, 236, 200, 240)
-            if self.show["corner"] == "pause":
-                bw, bh = max(3, int(5 * u)), int(r * 0.9)
-                for dx in (-int(r * 0.25), int(r * 0.25)):
-                    pygame.draw.rect(layer, col, (cx + dx - bw // 2, cy - bh // 2, bw, bh))
-            else:
-                k = r * 0.38
-                lw = max(2, int(4 * u))
-                pygame.draw.line(layer, col, (cx - k, cy - k), (cx + k, cy + k), lw)
-                pygame.draw.line(layer, col, (cx - k, cy + k), (cx + k, cy - k), lw)
-
-        surface.blit(layer, (0, 0))
+            put(self._sprite("corner", "corner" in pressed, self.show["corner"], r, u), cx, cy)

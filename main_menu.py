@@ -70,14 +70,34 @@ QUALITY_OPTS = ["Low", "Medium", "High"]
 # On Android the game is always fullscreen, and a wide picture suits a phone better.
 from touch import ON_ANDROID
 if ON_ANDROID:
-    settings["resolution"] = "1280x720"
+    RESOLUTIONS = ["Fit screen"]
+    settings["resolution"] = "Fit screen"
     settings["fullscreen"] = True
 
 
+FIT_SCREEN = "Fit screen"
+
+
 def parse_resolution(res_str):
-    """'1280x720' -> (1280, 720)"""
+    """'1280x720' -> (1280, 720); "Fit screen" -> the phone's shape, 600 tall."""
+    if res_str == FIT_SCREEN:
+        return fit_screen_size()
     w, h = res_str.lower().split("x")
     return int(w), int(h)
+
+
+def fit_screen_size():
+    """A picture 600 tall (the height the game's screens are laid out for) and as wide as
+    the display's shape, so a phone shows it edge to edge with no black bars. 600 rather
+    than 720 also means less to draw each frame, and bigger text and buttons."""
+    try:
+        dw, dh = pygame.display.get_desktop_sizes()[0]
+        if dh > dw:
+            dw, dh = dh, dw                          # landscape
+        w = int(round(600 * dw / dh / 2)) * 2
+    except Exception:
+        w = 1066
+    return max(800, min(1440, w)), 600
 
 
 # ---------------------------------------------------------------------------

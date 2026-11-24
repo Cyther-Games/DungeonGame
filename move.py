@@ -5867,10 +5867,33 @@ def lighten(color, amount):
 def darken(color, amount):
     return tuple(max(0, int(c * (1 - amount))) for c in color[:3])
 
+# Gradients and glows are drawn row by row / ring by ring, which is slow in Python (and
+# much slower on a phone), but the same size and colours always give the same picture -
+# so each one is made once and reused. Bounded so odd one-offs can't pile up.
+_GFX_CACHE = {}
+_GFX_CACHE_MAX = 600
+
+
+def _gfx_cached(key, make):
+    surf = _GFX_CACHE.get(key)
+    if surf is None:
+        if len(_GFX_CACHE) >= _GFX_CACHE_MAX:
+            _GFX_CACHE.clear()
+        surf = _GFX_CACHE[key] = make()
+    return surf
+
+
 def draw_gradient_rect(surface, rect, color_top, color_bottom, border_radius=0):
     """Vertical gradient fill inside rect, with optional rounded corners."""
     if rect.width <= 0 or rect.height <= 0:
         return
+    key = ("grad", rect.width, rect.height, tuple(color_top), tuple(color_bottom), border_radius)
+    surface.blit(_gfx_cached(key, lambda: _make_gradient(rect.width, rect.height, color_top,
+                                                         color_bottom, border_radius)), rect.topleft)
+
+
+def _make_gradient(w, h, color_top, color_bottom, border_radius):
+    rect = pygame.Rect(0, 0, w, h)
     grad = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
     for row in range(rect.height):
         t = row / max(1, rect.height - 1)
@@ -5880,13 +5903,20 @@ def draw_gradient_rect(surface, rect, color_top, color_bottom, border_radius=0):
         mask = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
         pygame.draw.rect(mask, (255, 255, 255, 255), mask.get_rect(), border_radius=r)
         grad.blit(mask, (0, 0), special_flags=pygame.BLEND_RGBA_MIN)
-    surface.blit(grad, rect.topleft)
+    return grad
 
 def draw_glow_rect(surface, rect, color, border_radius=6, layers=5, max_alpha=90, spread=8):
     """Soft additive aura behind a rect, for a magical glow feel."""
     if rect.width <= 0 or rect.height <= 0:
         return
-    glow_w, glow_h = rect.width + spread * 2, rect.height + spread * 2
+    key = ("glow", rect.width, rect.height, tuple(color[:3]), border_radius, layers, max_alpha, spread)
+    glow = _gfx_cached(key, lambda: _make_glow(rect.width, rect.height, color, border_radius,
+                                               layers, max_alpha, spread))
+    surface.blit(glow, (rect.x - spread, rect.y - spread), special_flags=pygame.BLEND_RGBA_ADD)
+
+
+def _make_glow(w, h, color, border_radius, layers, max_alpha, spread):
+    glow_w, glow_h = w + spread * 2, h + spread * 2
     glow = pygame.Surface((glow_w, glow_h), pygame.SRCALPHA)
     # Draw largest+faintest band first, smallest+brightest last, so the halo
     # fades outward from the object instead of washing the whole area evenly.
@@ -5896,7 +5926,7 @@ def draw_glow_rect(surface, rect, color, border_radius=6, layers=5, max_alpha=90
         alpha = int(max_alpha * (1 - frac) ** 2)
         band = pygame.Rect(inset, inset, glow_w - inset * 2, glow_h - inset * 2)
         pygame.draw.rect(glow, (*color[:3], alpha), band, border_radius=max(0, border_radius + spread - inset))
-    surface.blit(glow, (rect.x - spread, rect.y - spread), special_flags=pygame.BLEND_RGBA_ADD)
+    return glow
 
 def draw_filigree_corners(surface, rect, color=GRIM_GOLD, arm=14, inset=5, node=6):
     """The Grimoire corner motif: an L-bracket of two gold lines with a small
@@ -5922,9 +5952,12 @@ def draw_panel(surface, rect, bg_color=None, border_color=None, border_radius=6,
     if glow:
         draw_glow_rect(surface, rect, glow_color, border_radius=border_radius,
                         layers=3, max_alpha=34, spread=3)
-    panel = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
-    pygame.draw.rect(panel, (*bg_color, alpha), panel.get_rect(), border_radius=border_radius)
-    surface.blit(panel, rect.topleft)
+    def _make_panel():
+        p = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
+        pygame.draw.rect(p, (*bg_color, alpha), p.get_rect(), border_radius=border_radius)
+        return p
+    surface.blit(_gfx_cached(("panel", rect.width, rect.height, tuple(bg_color[:3]), alpha,
+                              border_radius), _make_panel), rect.topleft)
     pygame.draw.rect(surface, border_color, rect, width=1, border_radius=border_radius)
     inner = rect.inflate(-6, -6)
     if inner.width > 0 and inner.height > 0:
@@ -6840,7 +6873,8 @@ def _area_layers(area):
     rendered chunk found — animated tiles, tall sprites and lights — kept for good."""
     lay = _world_cache.get(area.id)
     if lay is None:
-        lay = {"chunks": {}, "seen": set(), "anim": {}, "tall": {}, "lights": {}}
+        lay = {"chunks": {}, "seen": set(), "anim": {}, "tall": {}, "lights": {},
+               "anim_k": {}, "tall_k": {}}       # the same two, listed per chunk
         _world_cache[area.id] = lay
     return lay
 
@@ -6857,6 +6891,8 @@ def _chunk(area, cx, cy):
             lay["anim"].update(r["anim"])
             lay["tall"].update(r["tall"])
             lay["lights"][key] = r["lights"]
+            lay["anim_k"][key] = sorted(r["anim"].items(), key=lambda kv: (kv[0][1], kv[0][0]))
+            lay["tall_k"][key] = sorted(r["tall"].items(), key=lambda kv: (kv[0][1], kv[0][0]))
         while len(lay["chunks"]) >= CHUNK_CACHE:
             lay["chunks"].pop(next(iter(lay["chunks"])))          # the least recently used
     lay["chunks"][key] = surf                                     # most recently used last
@@ -7025,6 +7061,20 @@ def _draw_battle_ambience(theme, outdoor, L, now):
     screen.set_clip(clip)
 
 
+def _chunk_items(by_chunk, x0, y0, x1, y1):
+    """The (tile, value) pairs listed per chunk that fall inside tiles x0..x1, y0..y1, in
+    row order (rows top to bottom, left to right within a row) like a tile-by-tile scan."""
+    found = []
+    for ky in range(y0 // CHUNK, y1 // CHUNK + 1):
+        for kx in range(x0 // CHUNK, x1 // CHUNK + 1):
+            for item in by_chunk.get((kx, ky), ()):
+                x, y = item[0]
+                if x0 <= x <= x1 and y0 <= y <= y1:
+                    found.append(item)
+    found.sort(key=lambda kv: (kv[0][1], kv[0][0]))
+    return found
+
+
 def draw_world(view, cam_x, cam_y):
     """Draw the live area into the base-resolution view at the given camera offset."""
     T = TILE_PX
@@ -7059,20 +7109,16 @@ def draw_world(view, cam_x, cam_y):
         break
     _update_world_ambience(area, cam_x, cam_y, vw, vh, now, light_list, tx0, ty0, tx1, ty1)
 
-    # animated liquids
+    # animated liquids (from the per-chunk lists: checking every tile on screen each frame
+    # is slow on a phone)
     frame = int(now * 3.2)
-    anim = layers["anim"]
-    for y in range(ty0, ty1 + 1):
-        for x in range(tx0, tx1 + 1):
-            a = anim.get((x, y))
-            if a:
-                key, overlay = a
-                lst = tiles[key]
-                dest = (x * T - cam_x, y * T - cam_y)
-                f = int(now * 9) if key == "waterfall" else frame + x + y * 2
-                view.blit(lst[f % len(lst)], dest)
-                if overlay is not None:
-                    view.blit(overlay, dest)
+    for (x, y), (key, overlay) in _chunk_items(layers["anim_k"], tx0, ty0, tx1, ty1):
+        lst = tiles[key]
+        dest = (x * T - cam_x, y * T - cam_y)
+        f = int(now * 9) if key == "waterfall" else frame + x + y * 2
+        view.blit(lst[f % len(lst)], dest)
+        if overlay is not None:
+            view.blit(overlay, dest)
 
     # spray rising from the plunge pool under each waterfall
     for (wx, wy) in getattr(area, "waterfalls", ()):
@@ -7105,13 +7151,9 @@ def draw_world(view, cam_x, cam_y):
     # y-sorted: tall objects, chests, foes, the player
     draws = []
     spawn_rings = []
-    tall = layers["tall"]
-    for y in range(ty0, min(area.h - 1, ty1 + 3) + 1):
-        for x in range(max(0, tx0 - 5), min(area.w - 1, tx1 + 2) + 1):
-            t = tall.get((x, y))
-            if t:
-                img, ox, oy, sort_y = t
-                draws.append((sort_y, 0, img, ox, oy))
+    for _xy, (img, ox, oy, sort_y) in _chunk_items(layers["tall_k"], max(0, tx0 - 5), ty0,
+                                                    min(area.w - 1, tx1 + 2), min(area.h - 1, ty1 + 3)):
+        draws.append((sort_y, 0, img, ox, oy))
     grass = worldgen.GRASS_KINDS
 
     def grass_front(fx, fy):
@@ -11058,6 +11100,25 @@ def render_pause_menu(frozen_state_fn):
     hint_y = py + _BTN_OFFSETS[-1] + 52 + 14
     draw_text("[Esc] Resume", small_font, GRIM_CREAM_FAINT, screen,
               SCREEN_WIDTH // 2, hint_y, center=True)
+    # how smoothly the game was running before the pause (for tuning slower devices)
+    if _fps_meter["fps"]:
+        draw_text(f"{_fps_meter['fps']:.0f} fps while playing", small_font, GRIM_CREAM_FAINT, screen,
+                  SCREEN_WIDTH // 2, py + _PANEL_H + 18, center=True)
+
+
+# Phones run the game at 30 frames a second: a steady 30 looks smoother than an uneven
+# 40-60, and it halves the work, so the phone doesn't heat up and slow itself down.
+TARGET_FPS = 30 if touch.ON_ANDROID else 60
+
+# Frames per second while playing (not paused), smoothed; shown on the pause screen.
+_fps_meter = {"fps": 0.0}
+
+
+def _measure_fps(frame_dt):
+    if game_state in (STATE_EXPLORE, STATE_COMBAT) and 0 < frame_dt < 1.0:
+        f = 1.0 / frame_dt
+        m = _fps_meter
+        m["fps"] = f if not m["fps"] else m["fps"] + (f - m["fps"]) * 0.05
 
 
 # --- Generate Map and Place Player/Enemies ---
@@ -11428,7 +11489,8 @@ try:
         player_selected_skill = skill_used_last_turn # Restore skill used for potential effectiveness display
 
         main_menu.present()
-        dt = clock.tick(60) / 1000.0
+        dt = clock.tick(TARGET_FPS) / 1000.0
+        _measure_fps(dt)
 except Exception as e:
     print(f"CRASH DETECTED: {e}")
     import traceback
