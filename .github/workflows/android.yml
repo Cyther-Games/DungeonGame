@@ -32,7 +32,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             git zip unzip autoconf automake libtool libtool-bin pkg-config \
-            zlib1g-dev libncurses-dev cmake libffi-dev libssl-dev build-essential ccache
+            zlib1g-dev libncurses-dev cmake libffi-dev libssl-dev build-essential ccache \
+            libltdl-dev
           python -m pip install --upgrade pip
           python -m pip install buildozer==1.6.0 cython setuptools
 
@@ -55,11 +56,15 @@ jobs:
       - name: Show why the build failed
         if: failure()
         run: |
+          sed -e 's/\[[0-9;]*m//g' build.log > plain.log
+          # where it stopped: buildozer's "Command failed" line, else the end of the log
+          stop=$(grep -n -m1 -E "Command failed|Buildozer failed" plain.log | cut -d: -f1)
+          stop=${stop:-$(wc -l < plain.log)}
           {
             echo "--- error lines ---"
-            grep -nE "Error|error:|Exception|Traceback|FAILED|No such file|not found" build.log | tail -n 40
-            echo "--- last lines ---"
-            tail -n 70 build.log
+            grep -nE "Error|error:|Exception|Traceback|FAILED|No such file|not found" plain.log | tail -n 30
+            echo "--- before it stopped (line $stop) ---"
+            sed -n "$((stop > 70 ? stop - 70 : 1)),$((stop + 2))p" plain.log
           } | cut -c1-220 > why.txt || true
           msg=$(sed -e 's/%/%25/g' why.txt | awk '{printf "%s%%0A", $0}')
           echo "::error title=Android build failed::${msg}"
