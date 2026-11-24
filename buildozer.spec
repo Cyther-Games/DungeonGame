@@ -9,7 +9,8 @@ package.domain = com.cythergames
 version = 0.1
 
 source.dir = .
-source.include_exts = py,png,json
+# .rgbz: plain-pixel copies of the PNGs, made by the build (.github/workflows/pack_images.py)
+source.include_exts = py,png,json,rgbz
 # files that are only for making art or for the PC launchers
 source.exclude_dirs = .github, .buildozer, bin, saves, .venv, __pycache__, p4a-recipes, tiles, Beta, Prompts, images/_original_stock
 source.exclude_patterns = make_element_icons.py, make_pixel_art.py, make_true_icons.py, make_vfx.py, make_vow_cards.py, DND.py, code.py, icons/_sheet_*, images/_sheet_*, vfx/_sheet_*

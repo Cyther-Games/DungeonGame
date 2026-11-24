@@ -51,3 +51,6 @@ vfx/_sheet_*.png
 # Android build output and buildozer's working folder
 .buildozer/
 bin/
+
+# made by the Android build from the PNGs
+*.rgbz

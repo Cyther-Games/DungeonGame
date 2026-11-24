@@ -1898,6 +1898,24 @@ clock = pygame.time.Clock(); dt = 0
 _img_tobytes = getattr(pygame.image, "tobytes", None) or pygame.image.tostring
 _img_frombytes = getattr(pygame.image, "frombytes", None) or pygame.image.fromstring
 
+# Every image the game loads goes through load_image(). If this pygame can't read PNGs
+# (its PNG module needs libraries the Android build may not have), it reads the .rgbz copy
+# the Android build makes of each PNG instead: "RGBZ", width, height, then zlib-packed
+# RGBA pixels - no image library needed (see .github/workflows/pack_images.py).
+_PNG_OK = pygame.image.get_extended()
+
+
+def load_image(path):
+    alt = os.path.splitext(path)[0] + ".rgbz"
+    if not _PNG_OK and os.path.exists(alt):
+        with open(alt, "rb") as f:
+            data = f.read()
+        if data[:4] == b"RGBZ":
+            w = int.from_bytes(data[4:8], "little")
+            h = int.from_bytes(data[8:12], "little")
+            return _img_frombytes(zlib.decompress(data[12:]), (w, h), "RGBA")
+    return pygame.image.load(path)
+
 
 def _load_serif(size, bold=False):
     """The Grimoire serif face: Georgia, or on systems without it (most Linux) the closest
@@ -1973,7 +1991,7 @@ _icon_size_cache = {}           # (element, size) -> Surface
 print("Loading element icons...")
 for element, filename in ELEMENT_ICONS_MAP.items():
     try:
-        img = pygame.image.load(filename).convert_alpha()
+        img = load_image(filename).convert_alpha()
         master = pygame.transform.smoothscale(img, (ICON_MASTER_SIZE, ICON_MASTER_SIZE))
         element_icon_masters[element] = master
         element_icons[element] = pygame.transform.smoothscale(master, (32, 32))
@@ -2001,7 +2019,7 @@ def get_element_icon(element, size):
 # --- Load Enemy Images ---
 enemy_images = {}; default_enemy_image = None
 try:
-    default_enemy_image = pygame.image.load(DEFAULT_ENEMY_IMAGE_PATH).convert_alpha()
+    default_enemy_image = load_image(DEFAULT_ENEMY_IMAGE_PATH).convert_alpha()
     print(f"Loaded default enemy image: {DEFAULT_ENEMY_IMAGE_PATH}")
 except (FileNotFoundError, pygame.error) as e: print(f"Warning: Default enemy image not found or failed to load ({DEFAULT_ENEMY_IMAGE_PATH}): {e}")
 
@@ -2009,14 +2027,14 @@ wall_texture = None
 USE_WALL_TEXTURE = True          # Graphics Quality: Low disables texture mapping for speed
 ENEMY_SPRITE_SCALE_FN = pygame.transform.scale  # nearest-neighbour: enemies are pixel art
 try:
-    wall_texture = pygame.image.load(WALL_TEXTURE_PATH).convert()
+    wall_texture = load_image(WALL_TEXTURE_PATH).convert()
     print(f"Loaded wall texture: {WALL_TEXTURE_PATH}")
 except (FileNotFoundError, pygame.error) as e: print(f"Warning: Wall texture not found or failed to load ({WALL_TEXTURE_PATH}): {e}")
 
 print("Loading enemy images...")
 for enemy_type in ENEMY_TYPES:
     path = enemy_type["image_path"]; name = enemy_type["name"]
-    try: image = pygame.image.load(path).convert_alpha(); enemy_images[name] = image; print(f" - Loaded: {path} for {name}")
+    try: image = load_image(path).convert_alpha(); enemy_images[name] = image; print(f" - Loaded: {path} for {name}")
     except (FileNotFoundError, pygame.error) as e: print(f"Warning: Image for {name} not found or failed to load ({path}): {e}. Using default."); enemy_images[name] = default_enemy_image
 
 # Empowered boss art: images/<name>_boss.png alongside each base sprite (see make_pixel_art.py)
@@ -2025,7 +2043,7 @@ for enemy_type in ENEMY_TYPES:
     name = enemy_type["name"]
     boss_path = enemy_type["image_path"].rsplit(".", 1)[0] + "_boss.png"
     try:
-        boss_images[name] = pygame.image.load(boss_path).convert_alpha()
+        boss_images[name] = load_image(boss_path).convert_alpha()
         print(f" - Loaded boss art: {boss_path} for {name}")
     except (FileNotFoundError, pygame.error):
         print(f"Note: No boss art for {name} ({boss_path}); falling back to its base sprite.")
@@ -2036,11 +2054,11 @@ chest_open_image = None
 for _rar in CHEST_RARITIES:
     _p = f"images/chest_{_rar.lower()}.png"
     try:
-        chest_images[_rar] = pygame.image.load(_p).convert_alpha()
+        chest_images[_rar] = load_image(_p).convert_alpha()
     except (FileNotFoundError, pygame.error) as e:
         print(f"Warning: Chest art missing for {_rar} ({_p}): {e}")
 try:
-    chest_open_image = pygame.image.load("images/chest_open.png").convert_alpha()
+    chest_open_image = load_image("images/chest_open.png").convert_alpha()
     print(f"Loaded chest art: {len(chest_images)} rarities + opened")
 except (FileNotFoundError, pygame.error) as e:
     print(f"Warning: images/chest_open.png not found: {e}")
@@ -2119,7 +2137,7 @@ print("Loading spell VFX...")
 for _vn in VFX_NAMES:
     _vp = os.path.join("vfx", _vn + ".png")
     try:
-        vfx_images[_vn] = pygame.image.load(_vp).convert_alpha()
+        vfx_images[_vn] = load_image(_vp).convert_alpha()
     except (FileNotFoundError, pygame.error) as _ve:
         print(f"Warning: VFX texture missing ({_vp}): {_ve}")
 print(f" - Loaded {len(vfx_images)}/{len(VFX_NAMES)} VFX textures")
@@ -6660,7 +6678,7 @@ def world_tiles():
                     continue
                 stem = f[:-4]
                 try:
-                    img = pygame.image.load(os.path.join(custom, f)).convert_alpha()
+                    img = load_image(os.path.join(custom, f)).convert_alpha()
                 except pygame.error:
                     continue
                 base, _, idx = stem.rpartition("_")
@@ -9120,7 +9138,7 @@ def vow_card_image(vow, kind):
         src = None
         if fname:
             try:
-                src = pygame.image.load(os.path.join(VOW_CARD_DIR, fname)).convert_alpha()
+                src = load_image(os.path.join(VOW_CARD_DIR, fname)).convert_alpha()
             except pygame.error as e:
                 print(f"Warning: vow card {fname} failed to load: {e}")
         _vow_card_cache[src_key] = src
@@ -11113,6 +11131,47 @@ TARGET_FPS = 30 if touch.ON_ANDROID else 60
 # Frames per second while playing (not paused), smoothed; shown on the pause screen.
 _fps_meter = {"fps": 0.0}
 
+# On Android, a small timing line at the bottom of the screen: where each frame's time
+# goes on the phone (logic, world drawing, the rest of the drawing, showing the frame),
+# in milliseconds. For tuning; set SHOW_TIMINGS = False to hide it.
+SHOW_TIMINGS = touch.ON_ANDROID
+_timing = {"logic": 0.0, "world": 0.0, "draw": 0.0, "show": 0.0, "frame": 0.0}
+
+
+def _timed(name, fn):
+    def run(*a, **k):
+        t = time.perf_counter()
+        try:
+            return fn(*a, **k)
+        finally:
+            _timing_add(name, time.perf_counter() - t)
+    return run
+
+
+def _timing_add(name, seconds):
+    _timing[name] += (seconds * 1000.0 - _timing[name]) * 0.1
+
+
+if SHOW_TIMINGS:
+    update_explore = _timed("logic", update_explore)
+    draw_world = _timed("world", draw_world)
+    render_explore = _timed("draw", render_explore)
+
+
+def _draw_timings():
+    if not SHOW_TIMINGS or game_state not in (STATE_EXPLORE, STATE_COMBAT):
+        return
+    t = _timing
+    line = (f"{_fps_meter['fps']:.0f} fps  |  logic {t['logic']:.0f}  world {t['world']:.0f}  "
+            f"ui {max(0.0, t['draw'] - t['world']):.0f}  show {t['show']:.0f}  frame {t['frame']:.0f} ms  |  "
+            f"PNG {'yes' if _PNG_OK else 'no'}")
+    img = small_font.render(line, True, (255, 240, 200))
+    bg = pygame.Surface((img.get_width() + 12, img.get_height() + 4), pygame.SRCALPHA)
+    bg.fill((0, 0, 0, 150))
+    x = SCREEN_WIDTH // 2 - bg.get_width() // 2
+    screen.blit(bg, (x, SCREEN_HEIGHT - bg.get_height()))
+    screen.blit(img, (x + 6, SCREEN_HEIGHT - bg.get_height() + 2))
+
 
 def _measure_fps(frame_dt):
     if game_state in (STATE_EXPLORE, STATE_COMBAT) and 0 < frame_dt < 1.0:
@@ -11134,6 +11193,7 @@ try:
     while running:
         skill_used_last_turn = player_selected_skill # Store for effectiveness check
 
+        _t_frame = time.perf_counter()
         _touch_layout()
         _events = touch_controls.process(pygame.event.get())
         for event in _events:   # a list, so clicks can append the KEYDOWN they stand for
@@ -11482,13 +11542,18 @@ try:
             begin_click_frame()      # cinematics swallow input, so nothing is hoverable
         draw_click_hover(screen)
         touch_controls.draw(screen)
+        _draw_timings()
 
         # Reset player selected skill tracker *after* processing logic and rendering
         # Store the skill used just before the event loop clears things for the next frame.
         # Effectiveness msg rendering now uses this stored value from the previous frame.
         player_selected_skill = skill_used_last_turn # Restore skill used for potential effectiveness display
 
+        _t_show = time.perf_counter()
         main_menu.present()
+        if SHOW_TIMINGS:
+            _timing_add("show", time.perf_counter() - _t_show)
+            _timing_add("frame", time.perf_counter() - _t_frame)
         dt = clock.tick(TARGET_FPS) / 1000.0
         _measure_fps(dt)
 except Exception as e:
